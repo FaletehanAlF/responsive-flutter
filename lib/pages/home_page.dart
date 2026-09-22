@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../models/post.dart';
 import 'detail_page.dart';
 import 'add_post_page.dart';
+import 'category_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -35,7 +36,21 @@ class _HomePageState extends State<HomePage> {
         },
         child: const Icon(Icons.add),
       ),
-      appBar: AppBar(title: const Text('NARATA')),
+      appBar: AppBar(
+        title: const Text('NARATA'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CategoryPage()),
+              );
+            },
+            icon: const Icon(Icons.category),
+            tooltip: 'Kategori',
+          ),
+        ],
+      ),
       body: FutureBuilder<List<Post>>(
         future: posts,
         builder: (context, snapshot) {
