@@ -31,17 +31,13 @@ class _CategoryPageState extends State<CategoryPage> {
   Future<void> addCategory() async {
     if (nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Nama kategori wajib diisi'),
-        ),
+        const SnackBar(content: Text('Nama kategori wajib diisi')),
       );
       return;
     }
 
     try {
-      await apiService.addCategory(
-        nameController.text.trim(),
-      );
+      await apiService.addCategory(nameController.text.trim());
 
       nameController.clear();
 
@@ -52,25 +48,19 @@ class _CategoryPageState extends State<CategoryPage> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kategori berhasil ditambahkan'),
-        ),
+        const SnackBar(content: Text('Kategori berhasil ditambahkan')),
       );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal menambahkan kategori: $e'),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal menambahkan kategori: $e')));
     }
   }
 
   Future<void> editCategory(Category category) async {
-    final controller = TextEditingController(
-      text: category.name,
-    );
+    final controller = TextEditingController(text: category.name);
 
     await showDialog(
       context: context,
@@ -79,9 +69,7 @@ class _CategoryPageState extends State<CategoryPage> {
           title: const Text('Edit Kategori'),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'Nama Kategori',
-            ),
+            decoration: const InputDecoration(labelText: 'Nama Kategori'),
           ),
           actions: [
             TextButton(
@@ -104,26 +92,24 @@ class _CategoryPageState extends State<CategoryPage> {
 
                   if (!mounted) return;
 
-                  Navigator.pop(dialogContext);
+                  Navigator.pop(context);
 
                   setState(() {
                     categories = apiService.getCategories();
                   });
 
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Kategori berhasil diubah'),
-                    ),
+                    const SnackBar(content: Text('Kategori berhasil diubah')),
+                  );
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Kategori berhasil diubah')),
                   );
                 } catch (e) {
                   if (!mounted) return;
 
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Gagal mengubah kategori: $e',
-                      ),
-                    ),
+                    SnackBar(content: Text('Gagal mengubah kategori: $e')),
                   );
                 }
               },
@@ -176,29 +162,21 @@ class _CategoryPageState extends State<CategoryPage> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Kategori berhasil dihapus'),
-        ),
+        const SnackBar(content: Text('Kategori berhasil dihapus')),
       );
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Gagal menghapus kategori: $e',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal menghapus kategori: $e')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kategori'),
-      ),
+      appBar: AppBar(title: const Text('Kategori')),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showDialog(
@@ -208,9 +186,7 @@ class _CategoryPageState extends State<CategoryPage> {
                 title: const Text('Tambah Kategori'),
                 content: TextField(
                   controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Kategori',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Nama Kategori'),
                 ),
                 actions: [
                   TextButton(
@@ -240,25 +216,17 @@ class _CategoryPageState extends State<CategoryPage> {
         future: categories,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Error: ${snapshot.error}',
-              ),
-            );
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
 
           final data = snapshot.data ?? [];
 
           if (data.isEmpty) {
-            return const Center(
-              child: Text('Belum ada kategori'),
-            );
+            return const Center(child: Text('Belum ada kategori'));
           }
 
           return ListView.builder(
@@ -267,11 +235,7 @@ class _CategoryPageState extends State<CategoryPage> {
               final category = data[index];
 
               return ListTile(
-                leading: CircleAvatar(
-                  child: Text(
-                    category.id.toString(),
-                  ),
-                ),
+                leading: CircleAvatar(child: Text(category.id.toString())),
                 title: Text(category.name),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
