@@ -83,4 +83,14 @@ Future<void> updatePost({
     throw Exception('Gagal mengubah artikel');
   }
 }
+
+Future<void> deletePost(int id) async {
+  final response = await http.delete(
+    Uri.parse('$baseUrl/posts/$id'),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Gagal menghapus artikel');
+  }
+}
 }
