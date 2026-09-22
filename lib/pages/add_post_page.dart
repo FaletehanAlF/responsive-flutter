@@ -140,7 +140,7 @@ class _AddPostPageState extends State<AddPostPage> {
             const SizedBox(height: 16),
 
             DropdownButtonFormField<int>(
-              value: selectedCategoryId,
+              initialValue: selectedCategoryId,
               decoration: const InputDecoration(
                 labelText: 'Kategori',
                 border: OutlineInputBorder(),

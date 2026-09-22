@@ -45,11 +45,11 @@ class _CategoryPageState extends State<CategoryPage> {
 
       nameController.clear();
 
+      if (!mounted) return;
+
       setState(() {
         categories = apiService.getCategories();
       });
-
-      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -102,7 +102,7 @@ class _CategoryPageState extends State<CategoryPage> {
                     controller.text.trim(),
                   );
 
-                  if (!dialogContext.mounted) return;
+                  if (!mounted) return;
 
                   Navigator.pop(dialogContext);
 
@@ -116,11 +116,13 @@ class _CategoryPageState extends State<CategoryPage> {
                     ),
                   );
                 } catch (e) {
-                  if (!dialogContext.mounted) return;
+                  if (!mounted) return;
 
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Gagal mengubah kategori: $e'),
+                      content: Text(
+                        'Gagal mengubah kategori: $e',
+                      ),
                     ),
                   );
                 }
@@ -183,7 +185,9 @@ class _CategoryPageState extends State<CategoryPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal menghapus kategori: $e'),
+          content: Text(
+            'Gagal menghapus kategori: $e',
+          ),
         ),
       );
     }
@@ -195,7 +199,6 @@ class _CategoryPageState extends State<CategoryPage> {
       appBar: AppBar(
         title: const Text('Kategori'),
       ),
-
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showDialog(
@@ -233,7 +236,6 @@ class _CategoryPageState extends State<CategoryPage> {
         },
         child: const Icon(Icons.add),
       ),
-
       body: FutureBuilder<List<Category>>(
         future: categories,
         builder: (context, snapshot) {
