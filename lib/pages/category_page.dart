@@ -59,6 +59,7 @@ class _CategoryPageState extends State<CategoryPage> {
     nameController.dispose();
     super.dispose();
   }
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
