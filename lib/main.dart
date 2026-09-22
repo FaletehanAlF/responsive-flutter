@@ -12,19 +12,24 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Percobaan Flexible'),
+          title: const Text('Percobaan LayoutBuilder'),
         ),
         body: Column(
           children: [
             Container(
-              width: 100,
-              height: 100,
-              color: Colors.amber,
-            ),
-            Container(
-              width: 100,
-              height: 100,
-              color: Colors.cyan,
+              width: 500,
+              height: 400,
+              color: Colors.blue,
+              alignment: Alignment.topLeft,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Container(
+                    width: constraints.maxWidth * 0.6,
+                    height: 100,
+                    color: Colors.amber,
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -32,3 +37,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
