@@ -40,8 +40,6 @@ class _EditPostPageState extends State<EditPostPage> {
       text: widget.post.content,
     );
 
-    selectedCategoryId = widget.post.categoryId;
-
     loadCategories();
   }
 
@@ -53,6 +51,9 @@ class _EditPostPageState extends State<EditPostPage> {
 
       setState(() {
         categories = data;
+        // Gunakan category_id dari artikel sebagai pilihan awal
+        // setelah daftar kategori selesai diambil.
+        selectedCategoryId = widget.post.categoryId;
         isLoadingCategories = false;
       });
     } catch (e) {
