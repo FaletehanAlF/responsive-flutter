@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/category.dart';
 import '../services/api_service.dart';
 
 class AddPostPage extends StatefulWidget {
@@ -11,16 +12,50 @@ class AddPostPage extends StatefulWidget {
 class _AddPostPageState extends State<AddPostPage> {
   final titleController = TextEditingController();
   final contentController = TextEditingController();
-  final categoryController = TextEditingController();
 
   final ApiService apiService = ApiService();
 
+  List<Category> categories = [];
+  int? selectedCategoryId;
+
   bool isLoading = false;
+  bool isLoadingCategories = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadCategories();
+  }
+
+  Future<void> loadCategories() async {
+    try {
+      final data = await apiService.getCategories();
+
+      if (!mounted) return;
+
+      setState(() {
+        categories = data;
+        isLoadingCategories = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingCategories = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengambil kategori: $e'),
+        ),
+      );
+    }
+  }
 
   Future<void> savePost() async {
-    if (titleController.text.isEmpty ||
-        contentController.text.isEmpty ||
-        categoryController.text.isEmpty) {
+    if (titleController.text.trim().isEmpty ||
+        contentController.text.trim().isEmpty ||
+        selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Semua data wajib diisi'),
@@ -35,9 +70,9 @@ class _AddPostPageState extends State<AddPostPage> {
 
     try {
       await apiService.addPost(
-        title: titleController.text,
-        content: contentController.text,
-        categoryId: int.parse(categoryController.text),
+        title: titleController.text.trim(),
+        content: contentController.text.trim(),
+        categoryId: selectedCategoryId!,
       );
 
       if (!mounted) return;
@@ -70,7 +105,6 @@ class _AddPostPageState extends State<AddPostPage> {
   void dispose() {
     titleController.dispose();
     contentController.dispose();
-    categoryController.dispose();
     super.dispose();
   }
 
@@ -80,7 +114,7 @@ class _AddPostPageState extends State<AddPostPage> {
       appBar: AppBar(
         title: const Text('Tambah Artikel'),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
@@ -88,6 +122,7 @@ class _AddPostPageState extends State<AddPostPage> {
               controller: titleController,
               decoration: const InputDecoration(
                 labelText: 'Judul Artikel',
+                border: OutlineInputBorder(),
               ),
             ),
 
@@ -98,23 +133,41 @@ class _AddPostPageState extends State<AddPostPage> {
               maxLines: 6,
               decoration: const InputDecoration(
                 labelText: 'Isi Artikel',
+                border: OutlineInputBorder(),
               ),
             ),
 
             const SizedBox(height: 16),
 
-            TextField(
-              controller: categoryController,
-              keyboardType: TextInputType.number,
+            DropdownButtonFormField<int>(
+              value: selectedCategoryId,
               decoration: const InputDecoration(
-                labelText: 'ID Kategori',
+                labelText: 'Kategori',
+                border: OutlineInputBorder(),
               ),
+              hint: isLoadingCategories
+                  ? const Text('Memuat kategori...')
+                  : const Text('Pilih kategori'),
+              items: categories.map((category) {
+                return DropdownMenuItem<int>(
+                  value: category.id,
+                  child: Text(category.name),
+                );
+              }).toList(),
+              onChanged: isLoadingCategories
+                  ? null
+                  : (value) {
+                      setState(() {
+                        selectedCategoryId = value;
+                      });
+                    },
             ),
 
             const SizedBox(height: 24),
 
             SizedBox(
               width: double.infinity,
+              height: 50,
               child: ElevatedButton(
                 onPressed: isLoading ? null : savePost,
                 child: isLoading
