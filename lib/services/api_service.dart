@@ -34,4 +34,28 @@ class ApiService {
     throw Exception('Gagal mengambil detail artikel');
   }
 }
+
+Future<void> addPost({
+  required String title,
+  required String content,
+  required int categoryId,
+  String? image,
+}) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/posts'),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      'title': title,
+      'content': content,
+      'image': image,
+      'category_id': categoryId,
+    }),
+  );
+
+  if (response.statusCode != 201) {
+    throw Exception('Gagal menambahkan artikel');
+  }
+}
 }
