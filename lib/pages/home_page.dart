@@ -26,6 +26,15 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddPostPage()),
+          );
+        },
+        child: const Icon(Icons.add),
+      ),
       appBar: AppBar(title: const Text('NARATA')),
       body: FutureBuilder<List<Post>>(
         future: posts,
