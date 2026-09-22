@@ -58,4 +58,29 @@ Future<void> addPost({
     throw Exception('Gagal menambahkan artikel');
   }
 }
+
+Future<void> updatePost({
+  required int id,
+  required String title,
+  required String content,
+  required int categoryId,
+  String? image,
+}) async {
+  final response = await http.put(
+    Uri.parse('$baseUrl/posts/$id'),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      'title': title,
+      'content': content,
+      'image': image,
+      'category_id': categoryId,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Gagal mengubah artikel');
+  }
+}
 }

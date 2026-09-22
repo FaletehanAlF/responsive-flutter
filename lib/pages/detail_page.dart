@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
+import 'edit_post_page.dart';
 
 class DetailPage extends StatelessWidget {
   final int postId;
@@ -14,34 +15,44 @@ class DetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final ApiService apiService = ApiService();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detail Artikel'),
-      ),
-      body: FutureBuilder<Post>(
-        future: apiService.getPostById(postId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
+    return FutureBuilder<Post>(
+      future: apiService.getPostById(postId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
               child: CircularProgressIndicator(),
-            );
-          }
+            ),
+          );
+        }
 
-          if (snapshot.hasError) {
-            return Center(
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Detail Artikel'),
+            ),
+            body: Center(
               child: Text('Error: ${snapshot.error}'),
-            );
-          }
+            ),
+          );
+        }
 
-          if (!snapshot.hasData) {
-            return const Center(
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(
               child: Text('Artikel tidak ditemukan'),
-            );
-          }
+            ),
+          );
+        }
 
-          final post = snapshot.data!;
+        final post = snapshot.data!;
 
-          return SingleChildScrollView(
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Detail Artikel'),
+          ),
+
+          body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,9 +85,27 @@ class DetailPage extends StatelessWidget {
                 ),
               ],
             ),
-          );
-        },
-      ),
+          ),
+
+          floatingActionButton: FloatingActionButton(
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditPostPage(
+                    post: post,
+                  ),
+                ),
+              );
+
+              if (result == true && context.mounted) {
+                Navigator.pop(context, true);
+              }
+            },
+            child: const Icon(Icons.edit),
+          ),
+        );
+      },
     );
   }
 }
