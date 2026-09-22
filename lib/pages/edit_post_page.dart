@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../models/post.dart';
+import '../models/category.dart';
 import '../services/api_service.dart';
 
 class EditPostPage extends StatefulWidget {
@@ -15,13 +17,16 @@ class EditPostPage extends StatefulWidget {
 }
 
 class _EditPostPageState extends State<EditPostPage> {
-  late TextEditingController titleController;
-  late TextEditingController contentController;
-  late TextEditingController categoryController;
-
   final ApiService apiService = ApiService();
 
+  late TextEditingController titleController;
+  late TextEditingController contentController;
+
+  List<Category> categories = [];
+  int? selectedCategoryId;
+
   bool isLoading = false;
+  bool isLoadingCategories = true;
 
   @override
   void initState() {
@@ -35,29 +40,43 @@ class _EditPostPageState extends State<EditPostPage> {
       text: widget.post.content,
     );
 
-    categoryController = TextEditingController(
-      text: widget.post.categoryId.toString(),
-    );
+    selectedCategoryId = widget.post.categoryId;
+
+    loadCategories();
+  }
+
+  Future<void> loadCategories() async {
+    try {
+      final data = await apiService.getCategories();
+
+      if (!mounted) return;
+
+      setState(() {
+        categories = data;
+        isLoadingCategories = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isLoadingCategories = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal mengambil kategori: $e'),
+        ),
+      );
+    }
   }
 
   Future<void> updatePost() async {
     if (titleController.text.trim().isEmpty ||
         contentController.text.trim().isEmpty ||
-        categoryController.text.trim().isEmpty) {
+        selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Semua data wajib diisi'),
-        ),
-      );
-      return;
-    }
-
-    final categoryId = int.tryParse(categoryController.text);
-
-    if (categoryId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('ID kategori harus berupa angka'),
         ),
       );
       return;
@@ -72,7 +91,7 @@ class _EditPostPageState extends State<EditPostPage> {
         id: widget.post.id,
         title: titleController.text.trim(),
         content: contentController.text.trim(),
-        categoryId: categoryId,
+        categoryId: selectedCategoryId!,
         image: widget.post.image,
       );
 
@@ -106,7 +125,6 @@ class _EditPostPageState extends State<EditPostPage> {
   void dispose() {
     titleController.dispose();
     contentController.dispose();
-    categoryController.dispose();
     super.dispose();
   }
 
@@ -142,13 +160,28 @@ class _EditPostPageState extends State<EditPostPage> {
 
             const SizedBox(height: 16),
 
-            TextField(
-              controller: categoryController,
-              keyboardType: TextInputType.number,
+            DropdownButtonFormField<int>(
+              initialValue: selectedCategoryId,
               decoration: const InputDecoration(
-                labelText: 'ID Kategori',
+                labelText: 'Kategori',
                 border: OutlineInputBorder(),
               ),
+              items: categories.map((category) {
+                return DropdownMenuItem<int>(
+                  value: category.id,
+                  child: Text(category.name),
+                );
+              }).toList(),
+              onChanged: isLoadingCategories
+                  ? null
+                  : (value) {
+                      setState(() {
+                        selectedCategoryId = value;
+                      });
+                    },
+              hint: isLoadingCategories
+                  ? const Text('Memuat kategori...')
+                  : const Text('Pilih kategori'),
             ),
 
             const SizedBox(height: 24),
