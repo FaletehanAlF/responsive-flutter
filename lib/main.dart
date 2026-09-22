@@ -14,27 +14,45 @@ class MyApp extends StatelessWidget {
         appBar: AppBar(
           title: const Text('Percobaan LayoutBuilder'),
         ),
-        body: Column(
-          children: [
-            Container(
-              width: 500,
-              height: 400,
-              color: Colors.blue,
-              alignment: Alignment.topLeft,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return Container(
-                    width: constraints.maxWidth * 0.6,
+        body: LayoutBuilder(
+          builder: (context, constraint) {
+            if (constraint.maxWidth < 600) {
+              // Mobile
+              return Column(
+                children: [
+                  Container(
                     height: 100,
-                    color: Colors.amber,
-                  );
-                },
-              ),
-            ),
-          ],
+                    color: Colors.deepOrange,
+                  ),
+                  const SizedBox(height: 100),
+                  Container(
+                    height: 200,
+                    width: double.infinity,
+                    color: Colors.blue,
+                  ),
+                ],
+              );
+            }
+
+            // Desktop / Web
+            return Row(
+              children: [
+                Container(
+                  width: 200,
+                  height: 300,
+                  color: Colors.deepOrange,
+                ),
+                const SizedBox(width: 20),
+                Container(
+                  width: 300,
+                  height: 300,
+                  color: Colors.blue,
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 }
-
