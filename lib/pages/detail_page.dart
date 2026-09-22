@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
-import 'edit_post_page.dart';
 
 class DetailPage extends StatelessWidget {
   final int postId;
 
-  const DetailPage({
-    super.key,
-    required this.postId,
-  });
+  const DetailPage({super.key, required this.postId});
 
   @override
   Widget build(BuildContext context) {
@@ -20,28 +16,20 @@ class DetailPage extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
         if (snapshot.hasError) {
           return Scaffold(
-            appBar: AppBar(
-              title: const Text('Detail Artikel'),
-            ),
-            body: Center(
-              child: Text('Error: ${snapshot.error}'),
-            ),
+            appBar: AppBar(title: const Text('Detail Artikel')),
+            body: Center(child: Text('Error: ${snapshot.error}')),
           );
         }
 
         if (!snapshot.hasData) {
           return const Scaffold(
-            body: Center(
-              child: Text('Artikel tidak ditemukan'),
-            ),
+            body: Center(child: Text('Artikel tidak ditemukan')),
           );
         }
 
@@ -50,59 +38,58 @@ class DetailPage extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Detail Artikel'),
-          ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: const Text('Hapus Artikel'),
+                        content: const Text(
+                          'Apakah kamu yakin ingin menghapus artikel ini?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context, false);
+                            },
+                            child: const Text('Batal'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context, true);
+                            },
+                            child: const Text('Hapus'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
 
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  post.title,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                  if (confirm != true) return;
 
-                const SizedBox(height: 8),
+                  try {
+                    await apiService.deletePost(post.id);
 
-                Text(
-                  post.categoryName,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                  ),
-                ),
+                    if (!context.mounted) return;
 
-                const SizedBox(height: 20),
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Artikel berhasil dihapus')),
+                    );
 
-                Text(
-                  post.content,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    height: 1.6,
-                  ),
-                ),
-              ],
-            ),
-          ),
+                    Navigator.pop(context, true);
+                  } catch (e) {
+                    if (!context.mounted) return;
 
-          floatingActionButton: FloatingActionButton(
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EditPostPage(
-                    post: post,
-                  ),
-                ),
-              );
-
-              if (result == true && context.mounted) {
-                Navigator.pop(context, true);
-              }
-            },
-            child: const Icon(Icons.edit),
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Gagal menghapus artikel: $e')),
+                    );
+                  }
+                },
+              ),
+            ],
           ),
         );
       },
