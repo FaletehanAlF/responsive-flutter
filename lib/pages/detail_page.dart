@@ -131,49 +131,70 @@ class DetailPage extends StatelessWidget {
               ),
             ],
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  post.title,
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final bool isDesktop = constraints.maxWidth >= 600;
+
+              double horizontalPadding = 16;
+
+              if (isDesktop) {
+                horizontalPadding = (constraints.maxWidth - 700) / 2;
+
+                if (horizontalPadding < 16) {
+                  horizontalPadding = 16;
+                }
+              }
+
+              return SingleChildScrollView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: horizontalPadding,
+                  vertical: 16,
                 ),
-
-                const SizedBox(height: 12),
-
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    post.categoryName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      post.title,
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ),
 
-                const SizedBox(height: 20),
+                    const SizedBox(height: 12),
 
-                Text(
-                  post.content,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    height: 1.6,
-                  ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        post.categoryName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Text(
+                      post.content,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        height: 1.6,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
         );
       },
