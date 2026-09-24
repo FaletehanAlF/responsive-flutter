@@ -114,69 +114,92 @@ class _AddPostPageState extends State<AddPostPage> {
       appBar: AppBar(
         title: const Text('Tambah Artikel'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(
-                labelText: 'Judul Artikel',
-                border: OutlineInputBorder(),
-              ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool isDesktop = constraints.maxWidth >= 600;
+
+          double horizontalPadding = 16;
+
+          if (isDesktop) {
+            horizontalPadding = (constraints.maxWidth - 700) / 2;
+
+            if (horizontalPadding < 16) {
+              horizontalPadding = 16;
+            }
+          }
+
+          return SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding,
+              vertical: 16,
             ),
+            child: Column(
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Judul Artikel',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
 
-            const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-            TextField(
-              controller: contentController,
-              maxLines: 6,
-              decoration: const InputDecoration(
-                labelText: 'Isi Artikel',
-                border: OutlineInputBorder(),
-              ),
+                TextField(
+                  controller: contentController,
+                  maxLines: 6,
+                  decoration: const InputDecoration(
+                    labelText: 'Isi Artikel',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                DropdownButtonFormField<int>(
+                  initialValue: selectedCategoryId,
+                  decoration: const InputDecoration(
+                    labelText: 'Kategori',
+                    border: OutlineInputBorder(),
+                  ),
+                  hint: isLoadingCategories
+                      ? const Text('Memuat kategori...')
+                      : const Text('Pilih kategori'),
+                  items: categories.map((category) {
+                    return DropdownMenuItem<int>(
+                      value: category.id,
+                      child: Text(
+                        category.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: isLoadingCategories
+                      ? null
+                      : (value) {
+                          setState(() {
+                            selectedCategoryId = value;
+                          });
+                        },
+                ),
+
+                const SizedBox(height: 24),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: isLoading ? null : savePost,
+                    child: isLoading
+                        ? const CircularProgressIndicator()
+                        : const Text('Simpan Artikel'),
+                  ),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 16),
-
-            DropdownButtonFormField<int>(
-              initialValue: selectedCategoryId,
-              decoration: const InputDecoration(
-                labelText: 'Kategori',
-                border: OutlineInputBorder(),
-              ),
-              hint: isLoadingCategories
-                  ? const Text('Memuat kategori...')
-                  : const Text('Pilih kategori'),
-              items: categories.map((category) {
-                return DropdownMenuItem<int>(
-                  value: category.id,
-                  child: Text(category.name),
-                );
-              }).toList(),
-              onChanged: isLoadingCategories
-                  ? null
-                  : (value) {
-                      setState(() {
-                        selectedCategoryId = value;
-                      });
-                    },
-            ),
-
-            const SizedBox(height: 24),
-
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: isLoading ? null : savePost,
-                child: isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text('Simpan Artikel'),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
