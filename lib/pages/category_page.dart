@@ -212,50 +212,81 @@ class _CategoryPageState extends State<CategoryPage> {
         },
         child: const Icon(Icons.add),
       ),
-      body: FutureBuilder<List<Category>>(
-        future: categories,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool isDesktop = constraints.maxWidth >= 600;
+
+          double horizontalPadding = 0;
+
+          if (isDesktop) {
+            horizontalPadding = (constraints.maxWidth - 700) / 2;
+
+            if (horizontalPadding < 16) {
+              horizontalPadding = 16;
+            }
           }
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+            child: FutureBuilder<List<Category>>(
+              future: categories,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          final data = snapshot.data ?? [];
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
 
-          if (data.isEmpty) {
-            return const Center(child: Text('Belum ada kategori'));
-          }
+                final data = snapshot.data ?? [];
 
-          return ListView.builder(
-            itemCount: data.length,
-            itemBuilder: (context, index) {
-              final category = data[index];
+                if (data.isEmpty) {
+                  return const Center(child: Text('Belum ada kategori'));
+                }
 
-              return ListTile(
-                leading: CircleAvatar(child: Text(category.id.toString())),
-                title: Text(category.name),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        editCategory(category);
-                      },
-                      icon: const Icon(Icons.edit),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        deleteCategory(category);
-                      },
-                      icon: const Icon(Icons.delete),
-                    ),
-                  ],
-                ),
-              );
-            },
+                return ListView.builder(
+                  itemCount: data.length,
+                  itemBuilder: (context, index) {
+                    final category = data[index];
+
+                    return ListTile(
+                      leading: CircleAvatar(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(category.id.toString()),
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        category.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              editCategory(category);
+                            },
+                            icon: const Icon(Icons.edit),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              deleteCategory(category);
+                            },
+                            icon: const Icon(Icons.delete),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           );
         },
       ),
