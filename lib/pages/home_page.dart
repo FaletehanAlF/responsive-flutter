@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import '../models/post.dart';
+import '../models/category.dart';
 import 'detail_page.dart';
 import 'add_post_page.dart';
 import 'category_page.dart';
@@ -17,22 +18,29 @@ class _HomePageState extends State<HomePage> {
   final ApiService apiService = ApiService();
 
   late Future<List<Post>> posts;
+  late Future<List<Category>> categories;
+
+  int? selectedCategoryId;
 
   @override
   void initState() {
     super.initState();
     posts = apiService.getPosts();
+    categories = apiService.getCategories();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddPostPage()),
           );
+          setState(() {
+            posts = apiService.getPosts();
+          });
         },
         child: const Icon(Icons.add),
       ),
@@ -40,54 +48,130 @@ class _HomePageState extends State<HomePage> {
         title: const Text('NARATA'),
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const CategoryPage()),
               );
+              setState(() {
+                posts = apiService.getPosts();
+                categories = apiService.getCategories();
+              });
             },
             icon: const Icon(Icons.category),
             tooltip: 'Kategori',
           ),
         ],
       ),
-      body: FutureBuilder<List<Post>>(
-        future: posts,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Column(
+        children: [
+          FutureBuilder<List<Category>>(
+            future: categories,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Center(child: Text('Memuat kategori...')),
+                );
+              }
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
+              if (snapshot.hasError) {
+                return const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Center(child: Text('Gagal memuat kategori')),
+                );
+              }
 
-          final data = snapshot.data ?? [];
+              final data = snapshot.data ?? [];
 
-          if (data.isEmpty) {
-            return const Center(child: Text('Belum ada artikel'));
-          }
-
-          return ListView.builder(
-            itemCount: data.length,
-            itemBuilder: (context, index) {
-              final post = data[index];
-
-              return ListTile(
-                title: Text(post.title),
-                subtitle: Text(post.categoryName),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => DetailPage(postId: post.id),
+              return Padding(
+                padding: const EdgeInsets.all(8),
+                child: DropdownButton<int?>(
+                  value: selectedCategoryId,
+                  isExpanded: true,
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('Semua'),
                     ),
-                  );
-                },
+                    ...data.map((category) {
+                      return DropdownMenuItem<int?>(
+                        value: category.id,
+                        child: Text(category.name),
+                      );
+                    }),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      selectedCategoryId = value;
+                    });
+                  },
+                ),
               );
             },
-          );
-        },
+          ),
+          Expanded(
+            child: FutureBuilder<List<Post>>(
+              future: posts,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+
+                final data = snapshot.data ?? [];
+
+                final List<Post> filtered;
+                if (selectedCategoryId == null) {
+                  filtered = data;
+                } else {
+                  filtered = data
+                      .where(
+                        (post) => post.categoryId == selectedCategoryId,
+                      )
+                      .toList();
+                }
+
+                if (filtered.isEmpty) {
+                  if (selectedCategoryId == null) {
+                    return const Center(child: Text('Belum ada artikel'));
+                  } else {
+                    return const Center(
+                      child: Text('Belum ada artikel pada kategori ini'),
+                    );
+                  }
+                }
+
+                return ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final post = filtered[index];
+
+                    return ListTile(
+                      title: Text(post.title),
+                      subtitle: Text(post.categoryName),
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                DetailPage(postId: post.id),
+                          ),
+                        );
+                        setState(() {
+                          posts = apiService.getPosts();
+                        });
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
