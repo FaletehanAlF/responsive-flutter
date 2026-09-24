@@ -63,115 +63,157 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          FutureBuilder<List<Category>>(
-            future: categories,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Center(child: Text('Memuat kategori...')),
-                );
-              }
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool isDesktop = constraints.maxWidth >= 600;
 
-              if (snapshot.hasError) {
-                return const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Center(child: Text('Gagal memuat kategori')),
-                );
-              }
+          double horizontalPadding = 0;
+          if (isDesktop) {
+            horizontalPadding = (constraints.maxWidth - 700) / 2;
+            if (horizontalPadding < 16) {
+              horizontalPadding = 16;
+            }
+          }
 
-              final data = snapshot.data ?? [];
-
-              return Padding(
-                padding: const EdgeInsets.all(8),
-                child: DropdownButton<int?>(
-                  value: selectedCategoryId,
-                  isExpanded: true,
-                  items: [
-                    const DropdownMenuItem<int?>(
-                      value: null,
-                      child: Text('Semua'),
-                    ),
-                    ...data.map((category) {
-                      return DropdownMenuItem<int?>(
-                        value: category.id,
-                        child: Text(category.name),
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+            child: Column(
+              children: [
+                FutureBuilder<List<Category>>(
+                  future: categories,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Center(child: Text('Memuat kategori...')),
                       );
-                    }),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      selectedCategoryId = value;
-                    });
+                    }
+
+                    if (snapshot.hasError) {
+                      return const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Center(child: Text('Gagal memuat kategori')),
+                      );
+                    }
+
+                    final data = snapshot.data ?? [];
+
+                    return Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: DropdownButton<int?>(
+                        value: selectedCategoryId,
+                        isExpanded: true,
+                        items: [
+                          const DropdownMenuItem<int?>(
+                            value: null,
+                            child: Text(
+                              'Semua',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          ...data.map((category) {
+                            return DropdownMenuItem<int?>(
+                              value: category.id,
+                              child: Text(
+                                category.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            selectedCategoryId = value;
+                          });
+                        },
+                      ),
+                    );
                   },
                 ),
-              );
-            },
-          ),
-          Expanded(
-            child: FutureBuilder<List<Post>>(
-              future: posts,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-
-                final data = snapshot.data ?? [];
-
-                final List<Post> filtered;
-                if (selectedCategoryId == null) {
-                  filtered = data;
-                } else {
-                  filtered = data
-                      .where(
-                        (post) => post.categoryId == selectedCategoryId,
-                      )
-                      .toList();
-                }
-
-                if (filtered.isEmpty) {
-                  if (selectedCategoryId == null) {
-                    return const Center(child: Text('Belum ada artikel'));
-                  } else {
-                    return const Center(
-                      child: Text('Belum ada artikel pada kategori ini'),
-                    );
-                  }
-                }
-
-                return ListView.builder(
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final post = filtered[index];
-
-                    return ListTile(
-                      title: Text(post.title),
-                      subtitle: Text(post.categoryName),
-                      onTap: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                DetailPage(postId: post.id),
-                          ),
+                Expanded(
+                  child: FutureBuilder<List<Post>>(
+                    future: posts,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
                         );
-                        setState(() {
-                          posts = apiService.getPosts();
-                        });
-                      },
-                    );
-                  },
-                );
-              },
+                      }
+
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text('Error: ${snapshot.error}'),
+                        );
+                      }
+
+                      final data = snapshot.data ?? [];
+
+                      final List<Post> filtered;
+                      if (selectedCategoryId == null) {
+                        filtered = data;
+                      } else {
+                        filtered = data
+                            .where(
+                              (post) =>
+                                  post.categoryId == selectedCategoryId,
+                            )
+                            .toList();
+                      }
+
+                      if (filtered.isEmpty) {
+                        if (selectedCategoryId == null) {
+                          return const Center(
+                            child: Text('Belum ada artikel'),
+                          );
+                        } else {
+                          return const Center(
+                            child: Text(
+                              'Belum ada artikel pada kategori ini',
+                            ),
+                          );
+                        }
+                      }
+
+                      return ListView.builder(
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          final post = filtered[index];
+
+                          return ListTile(
+                            title: Text(
+                              post.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(
+                              post.categoryName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      DetailPage(postId: post.id),
+                                ),
+                              );
+                              setState(() {
+                                posts = apiService.getPosts();
+                              });
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
