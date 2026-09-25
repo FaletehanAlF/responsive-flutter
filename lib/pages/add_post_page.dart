@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' hide Category;
+import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,110 +17,125 @@ class AddPostPage extends StatefulWidget {
 }
 
 class _AddPostPageState extends State<AddPostPage> {
-  final titleController = TextEditingController();
-  final contentController = TextEditingController();
-
   final ApiService apiService = ApiService();
   final ImagePicker _picker = ImagePicker();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _contentController = TextEditingController();
 
   XFile? _selectedImage;
+  Future<Uint8List>? _previewFuture;
 
-  List<Category> categories = [];
-  int? selectedCategoryId;
+  List<Category> _categories = const [];
+  int? _selectedCategoryId;
 
-  String? titleError;
-  String? contentError;
-  String? categoryError;
+  String? _titleError;
+  String? _contentError;
+  String? _categoryError;
 
-  bool isLoading = false;
-  bool isLoadingCategories = true;
+  bool _isSubmitting = false;
+  bool _isLoadingCategories = true;
 
   @override
   void initState() {
     super.initState();
-    loadCategories();
+    _loadCategories();
   }
 
-  Future<void> loadCategories() async {
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    super.dispose();
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _loadCategories() async {
     try {
       final data = await apiService.getCategories();
       if (!mounted) return;
       setState(() {
-        categories = data;
-        isLoadingCategories = false;
+        _categories = data;
+        _isLoadingCategories = false;
       });
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoadingCategories = false);
+      _showMessage(e.message);
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        isLoadingCategories = false;
-      });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal mengambil kategori: $e')));
+      setState(() => _isLoadingCategories = false);
+      _showMessage('Gagal mengambil kategori: $e');
     }
   }
 
-  Future<void> pickImageFromGallery() async {
+  Future<void> _pickImage() async {
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image == null) return;
+      final image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image == null || !mounted) return;
+
+      final size = await image.length();
+      if (size > kMaxImageSizeInBytes) {
+        _showMessage(
+          'Ukuran gambar ${(size / (1024 * 1024)).toStringAsFixed(1)} MB '
+          'melebihi batas 2 MB',
+        );
+        return;
+      }
+
       setState(() {
         _selectedImage = image;
+        _previewFuture = image.readAsBytes();
       });
     } on PlatformException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memilih gambar: ${e.message}')),
-      );
+      _showMessage('Gagal memilih gambar: ${e.message}');
     }
   }
 
-  void _removeImage() {
-    setState(() {
-      _selectedImage = null;
-    });
-  }
-
   bool _validate() {
+    final title = _titleController.text.trim();
+    final content = _contentController.text.trim();
+
     setState(() {
-      titleError = titleController.text.trim().isEmpty
-          ? 'Judul artikel wajib diisi'
-          : null;
-      contentError = contentController.text.trim().isEmpty
-          ? 'Isi artikel wajib diisi'
-          : null;
-      categoryError = selectedCategoryId == null
+      _titleError = title.isEmpty ? 'Judul artikel wajib diisi' : null;
+      _contentError = content.isEmpty ? 'Isi artikel wajib diisi' : null;
+      _categoryError = _selectedCategoryId == null
           ? 'Pilih salah satu kategori'
           : null;
     });
-    return titleError == null && contentError == null && categoryError == null;
+
+    return _titleError == null && _contentError == null && _categoryError == null;
   }
 
   void _resetForm() {
-    titleController.clear();
-    contentController.clear();
+    _titleController.clear();
+    _contentController.clear();
     setState(() {
       _selectedImage = null;
-      selectedCategoryId = null;
-      titleError = null;
-      contentError = null;
-      categoryError = null;
+      _previewFuture = null;
+      _selectedCategoryId = null;
+      _titleError = null;
+      _contentError = null;
+      _categoryError = null;
     });
   }
 
-  Future<void> savePost() async {
-    if (isLoading) return;
+  Future<void> _submit() async {
+    if (_isSubmitting) return;
     if (!_validate()) return;
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => _isSubmitting = true);
 
     try {
       await apiService.addPost(
-        title: titleController.text.trim(),
-        content: contentController.text.trim(),
-        categoryId: selectedCategoryId!,
+        title: _titleController.text.trim(),
+        content: _contentController.text.trim(),
+        categoryId: _selectedCategoryId!,
         image: _selectedImage,
       );
 
@@ -132,28 +147,19 @@ class _AddPostPageState extends State<AddPostPage> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Artikel berhasil ditambahkan')),
-      );
+      _showMessage('Artikel berhasil ditambahkan');
       Navigator.pop(context, true);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      _showMessage(e.message);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Gagal: $e')));
+      _showMessage('Gagal menambahkan artikel: $e');
     } finally {
       if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+        setState(() => _isSubmitting = false);
       }
     }
-  }
-
-  @override
-  void dispose() {
-    titleController.dispose();
-    contentController.dispose();
-    super.dispose();
   }
 
   @override
@@ -168,6 +174,7 @@ class _AddPostPageState extends State<AddPostPage> {
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth >= 600;
           final double cap = isDesktop ? 760 : double.infinity;
+
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(vertical: 20),
             child: Center(
@@ -180,82 +187,57 @@ class _AddPostPageState extends State<AddPostPage> {
                     children: [
                       Text(
                         'Publikasikan artikel baru.',
-                        style: Theme.of(context).textTheme.bodyMedium
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
                             ?.copyWith(color: colorScheme.outline),
                       ),
                       const SizedBox(height: 20),
                       _fieldLabel(context, 'Gambar Sampul'),
-                      _imagePicker(context),
+                      _buildImagePicker(context, colorScheme),
                       const SizedBox(height: 16),
                       _fieldLabel(context, 'Judul Artikel'),
                       TextField(
-                        controller: titleController,
+                        controller: _titleController,
                         textInputAction: TextInputAction.next,
                         onChanged: (_) {
-                          if (titleError != null) {
-                            setState(() => titleError = null);
+                          if (_titleError != null) {
+                            setState(() => _titleError = null);
                           }
                         },
                         decoration: InputDecoration(
                           hintText: 'Masukkan judul artikel',
-                          errorText: titleError,
+                          errorText: _titleError,
                           border: const OutlineInputBorder(),
                         ),
                       ),
                       const SizedBox(height: 16),
                       _fieldLabel(context, 'Isi Artikel'),
                       TextField(
-                        controller: contentController,
-                        maxLines: 6,
+                        controller: _contentController,
+                        maxLines: 10,
                         minLines: 5,
                         onChanged: (_) {
-                          if (contentError != null) {
-                            setState(() => contentError = null);
+                          if (_contentError != null) {
+                            setState(() => _contentError = null);
                           }
                         },
                         decoration: InputDecoration(
                           hintText: 'Tulis isi artikel di sini…',
-                          errorText: contentError,
+                          errorText: _contentError,
                           border: const OutlineInputBorder(),
                         ),
                       ),
                       const SizedBox(height: 16),
                       _fieldLabel(context, 'Kategori'),
-                      DropdownButtonFormField<int>(
-                        initialValue: selectedCategoryId,
-                        decoration: InputDecoration(
-                          hintText: isLoadingCategories
-                              ? 'Memuat kategori…'
-                              : 'Pilih kategori',
-                          errorText: categoryError,
-                          border: const OutlineInputBorder(),
-                        ),
-                        items: categories.map((category) {
-                          return DropdownMenuItem<int>(
-                            value: category.id,
-                            child: Text(
-                              category.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: isLoadingCategories
-                            ? null
-                            : (value) {
-                                setState(() {
-                                  selectedCategoryId = value;
-                                  categoryError = null;
-                                });
-                              },
-                      ),
+                      _buildCategoryDropdown(context),
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
                         height: 52,
                         child: FilledButton(
-                          onPressed: isLoading ? null : savePost,
-                          child: isLoading
+                          onPressed: _isSubmitting ? null : _submit,
+                          child: _isSubmitting
                               ? const SizedBox(
                                   width: 22,
                                   height: 22,
@@ -279,24 +261,55 @@ class _AddPostPageState extends State<AddPostPage> {
     );
   }
 
+  Widget _buildCategoryDropdown(BuildContext context) {
+    return DropdownButtonFormField<int>(
+      initialValue: _selectedCategoryId,
+      decoration: InputDecoration(
+        hintText: _isLoadingCategories ? 'Memuat kategori…' : 'Pilih kategori',
+        errorText: _categoryError,
+        border: const OutlineInputBorder(),
+      ),
+      items: _categories
+          .map(
+            (category) => DropdownMenuItem<int>(
+              value: category.id,
+              child: Text(
+                category.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          )
+          .toList(),
+      onChanged: _isLoadingCategories
+          ? null
+          : (value) {
+              setState(() {
+                _selectedCategoryId = value;
+                _categoryError = null;
+              });
+            },
+    );
+  }
+
   Widget _fieldLabel(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.labelLarge
+        style: Theme.of(context)
+            .textTheme
+            .labelLarge
             ?.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }
 
-  Widget _imagePicker(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final bool isDesktop = MediaQuery.sizeOf(context).width >= 600;
-
-    if (_selectedImage == null) {
+  Widget _buildImagePicker(BuildContext context, ColorScheme colorScheme) {
+    final image = _selectedImage;
+    if (image == null) {
       return InkWell(
-        onTap: pickImageFromGallery,
+        onTap: _pickImage,
         borderRadius: BorderRadius.circular(16),
         child: Container(
           width: double.infinity,
@@ -323,13 +336,17 @@ class _AddPostPageState extends State<AddPostPage> {
               const SizedBox(height: 12),
               Text(
                 'Pilih gambar',
-                style: Theme.of(context).textTheme.titleMedium
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
                     ?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 4),
               Text(
                 'JPG, PNG, atau WEBP • Maks 2 MB',
-                style: Theme.of(context).textTheme.bodySmall
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
                     ?.copyWith(color: colorScheme.outline),
               ),
             ],
@@ -343,63 +360,79 @@ class _AddPostPageState extends State<AddPostPage> {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(16),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: isDesktop ? 320 : 260),
-            child: kIsWeb
-                ? Image.network(
-                    _selectedImage!.path,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text('Gagal memuat pratinjau'),
-                      );
-                    },
-                  )
-                : FutureBuilder<Uint8List>(
-                    future: _selectedImage!.readAsBytes(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Padding(
-                          padding: EdgeInsets.all(24),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                      if (snapshot.hasError || !snapshot.hasData) {
-                        return const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Text('Gagal memuat pratinjau'),
-                        );
-                      }
-                      return Image.memory(
-                        snapshot.data!,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      );
-                    },
-                  ),
-          ),
+          child: _buildPreview(context, image),
         ),
         const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: pickImageFromGallery,
+                onPressed: _pickImage,
                 icon: const Icon(Icons.refresh, size: 18),
                 label: const Text('Ganti gambar'),
               ),
             ),
             const SizedBox(width: 8),
             TextButton.icon(
-              onPressed: _removeImage,
+              onPressed: () {
+                setState(() {
+                  _selectedImage = null;
+                  _previewFuture = null;
+                });
+              },
               icon: const Icon(Icons.delete_outline, size: 18),
               label: const Text('Hapus'),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildPreview(BuildContext context, XFile image) {
+    if (kIsWeb) {
+      return Image.network(
+        image.path,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const _PreviewError(),
+      );
+    }
+
+    return FutureBuilder<Uint8List>(
+      future: _previewFuture ?? image.readAsBytes(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError || !snapshot.hasData) {
+          return const _PreviewError();
+        }
+        return Image.memory(
+          snapshot.data!,
+          width: double.infinity,
+          fit: BoxFit.cover,
+        );
+      },
+    );
+  }
+}
+
+class _PreviewError extends StatelessWidget {
+  const _PreviewError();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      height: 180,
+      color: colorScheme.surfaceContainerHighest,
+      child: const Center(
+        child: Icon(Icons.image_not_supported, size: 40),
+      ),
     );
   }
 }
