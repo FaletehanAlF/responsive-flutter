@@ -5,15 +5,18 @@ import '../services/api_service.dart';
 import '../widgets/narata_app_bar.dart';
 
 class CategoryPage extends StatefulWidget {
-  const CategoryPage({super.key});
+  final ApiService? apiService;
+
+  const CategoryPage({super.key, this.apiService});
 
   @override
   State<CategoryPage> createState() => _CategoryPageState();
 }
 
 class _CategoryPageState extends State<CategoryPage> {
-  final ApiService apiService = ApiService();
   final TextEditingController _nameController = TextEditingController();
+
+  late final ApiService apiService = widget.apiService ?? ApiService();
 
   late Future<({List<Category> categories, Map<int, int> counts})> _dataFuture;
 

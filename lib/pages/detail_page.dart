@@ -10,15 +10,21 @@ import 'edit_post_page.dart';
 class DetailPage extends StatefulWidget {
   final int postId;
   final void Function(bool changed)? onClose;
+  final ApiService? apiService;
 
-  const DetailPage({super.key, required this.postId, this.onClose});
+  const DetailPage({
+    super.key,
+    required this.postId,
+    this.onClose,
+    this.apiService,
+  });
 
   @override
   State<DetailPage> createState() => _DetailPageState();
 }
 
 class _DetailPageState extends State<DetailPage> {
-  final ApiService apiService = ApiService();
+  late final ApiService apiService = widget.apiService ?? ApiService();
 
   late int _postId;
   late Future<Post> _postFuture;
