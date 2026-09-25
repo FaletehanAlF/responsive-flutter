@@ -63,11 +63,6 @@ class _CategoryPageState extends State<CategoryPage> {
 
     if (name == null || !mounted) return;
 
-    if (name.trim().isEmpty) {
-      _showMessage('Nama kategori wajib diisi');
-      return;
-    }
-
     final trimmed = name.trim();
     try {
       if (existing == null) {
@@ -277,6 +272,8 @@ class _CategoryNameDialogState extends State<_CategoryNameDialog> {
     text: widget.category?.name ?? '',
   );
 
+  String? _error;
+
   @override
   void dispose() {
     _controller.dispose();
@@ -284,7 +281,12 @@ class _CategoryNameDialogState extends State<_CategoryNameDialog> {
   }
 
   void _submit() {
-    Navigator.pop(context, _controller.text);
+    final name = _controller.text.trim();
+    if (name.isEmpty) {
+      setState(() => _error = 'Nama kategori wajib diisi');
+      return;
+    }
+    Navigator.pop(context, name);
   }
 
   @override
@@ -297,10 +299,16 @@ class _CategoryNameDialogState extends State<_CategoryNameDialog> {
         autofocus: true,
         textCapitalization: TextCapitalization.sentences,
         textInputAction: TextInputAction.done,
+        onChanged: (_) {
+          if (_error != null) {
+            setState(() => _error = null);
+          }
+        },
         onSubmitted: (_) => _submit(),
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           labelText: 'Nama Kategori',
           hintText: 'Masukkan nama kategori',
+          errorText: _error,
         ),
       ),
       actions: [
