@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/post.dart';
@@ -96,11 +97,27 @@ class ApiService {
 
     if (image != null) {
       final bytes = await image.readAsBytes();
+      final fileName = image.name.toLowerCase();
+
+      late final MediaType contentType;
+      if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+        contentType = MediaType('image', 'jpeg');
+      } else if (fileName.endsWith('.png')) {
+        contentType = MediaType('image', 'png');
+      } else if (fileName.endsWith('.webp')) {
+        contentType = MediaType('image', 'webp');
+      } else {
+        throw Exception(
+          'Format gambar tidak didukung. Hanya jpg, jpeg, png, webp yang diizinkan',
+        );
+      }
+
       request.files.add(
         http.MultipartFile.fromBytes(
           'image',
           bytes,
           filename: image.name,
+          contentType: contentType,
         ),
       );
     }
@@ -109,7 +126,9 @@ class ApiService {
     final response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode != 201) {
-      throw Exception('Gagal menambahkan artikel');
+      throw Exception(
+        'Gagal menambahkan artikel: ${response.statusCode} ${response.body}',
+      );
     }
   }
 
