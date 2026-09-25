@@ -314,28 +314,32 @@ class _EditPostPageState extends State<EditPostPage> {
     String? oldImageUrl,
   ) {
     final newImage = _newImage;
-    final previewSource = newImage ?? (oldImageUrl != null && !_removeExistingImage ? oldImageUrl : null);
+    final currentImageUrl =
+        oldImageUrl != null && !_removeExistingImage ? oldImageUrl : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (previewSource != null)
+        if (newImage != null)
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: newImage != null
-                ? _buildNewImagePreview(context, newImage)
-                : Image.network(
-                    previewSource,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      height: 180,
-                      color: colorScheme.surfaceContainerHighest,
-                      child: const Center(
-                        child: Icon(Icons.image_not_supported, size: 40),
-                      ),
-                    ),
-                  ),
+            child: _buildNewImagePreview(context, newImage),
+          )
+        else if (currentImageUrl != null)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.network(
+              currentImageUrl,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                height: 180,
+                color: colorScheme.surfaceContainerHighest,
+                child: const Center(
+                  child: Icon(Icons.image_not_supported, size: 40),
+                ),
+              ),
+            ),
           )
         else
           Container(

@@ -246,26 +246,44 @@ class _HomePageState extends State<HomePage> {
 
     final Widget? cover = imageUrl == null
         ? null
-        : SizedBox(
-            height: fixedImageHeight,
-            child: Image.network(
-              imageUrl,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) return child;
-                return const Center(child: CircularProgressIndicator());
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: colorScheme.surfaceContainerHighest,
-                  child: const Center(
-                    child: Icon(Icons.image_not_supported, size: 40),
-                  ),
-                );
-              },
-            ),
-          );
+        : maxImageHeight == null
+            ? Image.network(
+                imageUrl,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return const Center(child: CircularProgressIndicator());
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: colorScheme.surfaceContainerHighest,
+                    child: const Center(
+                      child: Icon(Icons.image_not_supported, size: 40),
+                    ),
+                  );
+                },
+              )
+            : ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxImageHeight),
+                child: Image.network(
+                  imageUrl,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: colorScheme.surfaceContainerHighest,
+                      child: const Center(
+                        child: Icon(Icons.image_not_supported, size: 40),
+                      ),
+                    );
+                  },
+                ),
+              );
 
     Widget body = Padding(
       padding: const EdgeInsets.all(12),
