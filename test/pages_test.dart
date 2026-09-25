@@ -256,16 +256,50 @@ void main() {
       );
     });
 
-    testWidgets('tombol coba lagi pada state error tidak melempar error', (
-      tester,
-    ) async {
-      await _pump(tester, DetailPage(postId: 999, apiService: _api()));
-      expect(find.text('Coba lagi'), findsOneWidget);
+    testWidgets('coba lagi memuat ulang artikel setelah gagal', (tester) async {
+      var postCalls = 0;
+      final client = MockClient((request) async {
+        if (request.url.path == '/categories') {
+          return http.Response(
+            jsonEncode({'success': true, 'data': _kCategories}),
+            200,
+          );
+        }
+        postCalls++;
+        if (postCalls == 1) {
+          return http.Response(
+            jsonEncode({'success': false, 'message': 'Serveryw Error'}),
+            500,
+          );
+        }
+        return http.Response(
+          jsonEncode({'success': true, 'data': _posts().first}),
+          200,
+        );
+      });
 
-      await _tap(tester, find.text('Coba lagi'));
-      await tester.pump(const Duration(milliseconds: 100));
+      await _pump(
+        tester,
+        DetailPage(
+          postId: 1,
+          apiService: ApiService(
+            baseUrl: 'http://test.local',
+            client: client,
+          ),
+        ),
+      );
+
+      expect(postCalls, 1);
+      expect(find.text('Gagal memuat artikel'), findsOneWidget);
+      expect(find.textContaining('Serveryw Error'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Coba lagi'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
       expect(tester.takeException(), isNull);
+      expect(postCalls, 2);
+      expect(find.textContaining('Artikel Nomor 1'), findsWidgets);
     });
 
     testWidgets('berpindah postId menampilkan data terbaru', (tester) async {
@@ -548,9 +582,12 @@ void main() {
         ),
       );
 
-      await _tap(tester, find.byIcon(Icons.delete_outline).first);
-      await _tap(tester, find.text('Hapus').last);
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(find.byIcon(Icons.delete_outline).first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.widgetWithText(FilledButton, 'Hapus'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(tester.takeException(), isNull);
       expect(
@@ -566,11 +603,14 @@ void main() {
     ) async {
       await _pump(tester, CategoryPage(apiService: _api()));
 
-      await _tap(tester, find.byType(FloatingActionButton));
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Tambah Kategori'), findsOneWidget);
 
-      await _tap(tester, find.widgetWithText(FilledButton, 'Simpan'));
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(find.widgetWithText(FilledButton, 'Simpan'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(tester.takeException(), isNull);
       expect(find.text('Nama kategori wajib diisi'), findsOneWidget);
