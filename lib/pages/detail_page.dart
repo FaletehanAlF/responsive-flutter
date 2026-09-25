@@ -4,8 +4,8 @@ import '../models/post.dart';
 import '../services/api_service.dart';
 import 'edit_post_page.dart';
 
-/// Halaman detail artikel: badge kategori, tanggal, judul besar,
-/// gambar utama 16:9, isi artikel, dan aksi Edit/Hapus.
+/// Halaman detail artikel: gambar utama di atas, badge kategori,
+/// judul besar, dan isi artikel.
 class DetailPage extends StatefulWidget {
   final int postId;
 
@@ -41,10 +41,13 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   /// Gambar utama artikel.
-  /// Desktop dibatasi tingginya (340px, dalam rentang 320-380px) agar tidak
-  /// mendominasi viewport dan judul/konten tetap terlihat; mobile tetap
-  /// 16:9 mengikuti lebar layar. BoxFit.cover tanpa distorsi, radius 16px.
-  Widget _heroImage(BuildContext context, String imageUrl, bool isDesktop) {
+  /// Mobile (fullBleed): memenuhi lebar layar tanpa radius, tinggi 260px.
+  /// Desktop: di dalam kontainer dengan radius 16px, tinggi 340px.
+  Widget _heroImage(
+    BuildContext context,
+    String imageUrl, {
+    required bool fullBleed,
+  }) {
     final image = Image.network(
       imageUrl,
       width: double.infinity,
@@ -62,11 +65,16 @@ class _DetailPageState extends State<DetailPage> {
         );
       },
     );
+    if (fullBleed) {
+      return SizedBox(
+        height: 260,
+        width: double.infinity,
+        child: image,
+      );
+    }
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
-      child: isDesktop
-          ? SizedBox(height: 340, width: double.infinity, child: image)
-          : AspectRatio(aspectRatio: 16 / 9, child: image),
+      child: SizedBox(height: 340, width: double.infinity, child: image),
     );
   }
 
@@ -196,94 +204,108 @@ class _DetailPageState extends State<DetailPage> {
               final bool isDesktop = constraints.maxWidth >= 600;
               final double cap = isDesktop ? 760 : double.infinity;
               return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: cap),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.secondaryContainer,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  post.categoryName.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.6,
-                                    color: colorScheme.onSecondaryContainer,
-                                  ),
-                                ),
-                              ),
-                              if (date.isNotEmpty)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.surfaceContainerHighest,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.calendar_today,
-                                        size: 13,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (imageUrl != null && !isDesktop)
+                      _heroImage(context, imageUrl, fullBleed: true),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: cap),
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  crossAxisAlignment:
+                                      WrapCrossAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding:
+                                          const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
                                       ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        date,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.primary,
+                                        borderRadius:
+                                            BorderRadius.circular(20),
                                       ),
-                                    ],
+                                      child: Text(
+                                        post.categoryName.toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.6,
+                                          color: colorScheme.onPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                    if (date.isNotEmpty)
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.calendar_today,
+                                            size: 13,
+                                            color: colorScheme.outline,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            date,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color:
+                                                      colorScheme.outline,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  post.title,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        height: 1.25,
+                                      ),
+                                ),
+                                if (imageUrl != null && isDesktop) ...[
+                                  const SizedBox(height: 16),
+                                  _heroImage(
+                                    context,
+                                    imageUrl,
+                                    fullBleed: false,
                                   ),
+                                ],
+                                const SizedBox(height: 20),
+                                Text(
+                                  post.content,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.copyWith(height: 1.7),
                                 ),
-                            ],
+                                const SizedBox(height: 8),
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            post.title,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.25,
-                                ),
-                          ),
-                          if (imageUrl != null) ...[
-                            const SizedBox(height: 16),
-                            _heroImage(context, imageUrl, isDesktop),
-                          ],
-                          const SizedBox(height: 20),
-                          Text(
-                            post.content,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyLarge
-                                ?.copyWith(height: 1.7),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               );
             },

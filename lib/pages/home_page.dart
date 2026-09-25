@@ -8,8 +8,8 @@ import 'detail_page.dart';
 import 'notification_page.dart';
 import 'profile_page.dart';
 
-/// Halaman utama NARATA: sambutan, ringkasan, filter kategori,
-/// dan daftar artikel terbaru.
+/// Halaman utama NARATA: sambutan, kartu unggulan, tab kategori,
+/// dan daftar artikel horizontal.
 class HomePage extends StatefulWidget {
   final int refreshSignal;
 
@@ -49,12 +49,6 @@ class _HomePageState extends State<HomePage> {
       _postsFuture = apiService.getPosts();
       _categoriesFuture = apiService.getCategories();
     });
-  }
-
-  String _snippet(String content) {
-    final clean = content.trim().replaceAll(RegExp(r'\s+'), ' ');
-    if (clean.length <= 100) return clean;
-    return '${clean.substring(0, 100)}…';
   }
 
   String _formatDate(String raw) {
@@ -121,7 +115,7 @@ class _HomePageState extends State<HomePage> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth >= 600;
-          final double cap = isDesktop ? 1000 : double.infinity;
+          final double cap = isDesktop ? 1120 : double.infinity;
           return RefreshIndicator(
             onRefresh: () async => _load(),
             child: SingleChildScrollView(
@@ -214,50 +208,11 @@ class _HomePageState extends State<HomePage> {
                                         color: colorScheme.outline,
                                       ),
                                 ),
-                                const SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _statCard(
-                                        context,
-                                        icon: Icons.article_outlined,
-                                        value: '${posts.length}',
-                                        label: 'Total Artikel',
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _statCard(
-                                        context,
-                                        icon: Icons.category_outlined,
-                                        value: '${categories.length}',
-                                        label: 'Total Kategori',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 24),
-                                Text(
-                                  'Artikel Terbaru',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleLarge
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 19,
-                                      ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  'Artikel yang baru ditambahkan',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: colorScheme.outline,
-                                      ),
-                                ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 20),
+                                if (filtered.isNotEmpty) ...[
+                                  _featuredCard(context, filtered.first),
+                                  const SizedBox(height: 20),
+                                ],
                                 if (catSnapshot.connectionState ==
                                     ConnectionState.waiting)
                                   Text(
@@ -270,59 +225,47 @@ class _HomePageState extends State<HomePage> {
                                         ),
                                   )
                                 else
-                                  SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: Row(
-                                      children: [
-                                        ChoiceChip(
-                                          label: const Text('Semua'),
-                                          selected:
-                                              _selectedCategoryId == null,
-                                          onSelected: (_) {
-                                            setState(
-                                              () =>
-                                                  _selectedCategoryId = null,
-                                            );
-                                          },
-                                        ),
-                                        ...categories.map(
-                                          (category) => Padding(
-                                            padding: const EdgeInsets.only(
-                                              left: 8,
-                                            ),
-                                            child: ChoiceChip(
-                                              label: Text(category.name),
-                                              selected: _selectedCategoryId ==
-                                                  category.id,
-                                              onSelected: (_) {
-                                                setState(() {
-                                                  _selectedCategoryId =
-                                                      category.id;
-                                                });
-                                              },
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                const SizedBox(height: 16),
+                                  _categoryTabs(context, categories),
+                                const SizedBox(height: 8),
                                 if (filtered.isEmpty)
                                   _emptyState(context)
-                                else
-                                  ListView.separated(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount: filtered.length,
-                                    separatorBuilder: (context, index) =>
-                                        const SizedBox(height: 12),
-                                    itemBuilder: (context, index) =>
-                                        _articleCard(
-                                      context,
-                                      filtered[index],
+                                else if (filtered.length > 1)
+                                  if (isDesktop)
+                                    GridView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount: filtered.length - 1,
+                                      gridDelegate:
+                                          SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount:
+                                            constraints.maxWidth >= 1050
+                                                ? 3
+                                                : 2,
+                                        crossAxisSpacing: 12,
+                                        mainAxisSpacing: 12,
+                                        childAspectRatio: 0.8,
+                                      ),
+                                      itemBuilder: (context, index) =>
+                                          _gridCard(
+                                        context,
+                                        filtered[index + 1],
+                                      ),
+                                    )
+                                  else
+                                    ListView.separated(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemCount: filtered.length - 1,
+                                      separatorBuilder: (context, index) =>
+                                          const SizedBox(height: 10),
+                                      itemBuilder: (context, index) =>
+                                          _rowCard(
+                                        context,
+                                        filtered[index + 1],
+                                      ),
                                     ),
-                                  ),
                               ],
                             );
                           },
@@ -339,101 +282,207 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _statCard(
-    BuildContext context, {
-    required IconData icon,
-    required String value,
-    required String label,
-  }) {
+  /// Tab kategori gaya teks dengan garis bawah pada tab aktif.
+  Widget _categoryTabs(BuildContext context, List<Category> categories) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: colorScheme.outlineVariant),
+    Widget tab(String label, bool active, VoidCallback onTap) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          margin: const EdgeInsets.only(right: 20),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color:
+                    active ? colorScheme.primary : Colors.transparent,
+                width: 2,
+              ),
+            ),
+          ),
+          child: Text(
+            label,
+            style: active
+                ? TextStyle(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                  )
+                : TextStyle(color: colorScheme.outline),
+          ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          tab(
+            'Semua',
+            _selectedCategoryId == null,
+            () => setState(() => _selectedCategoryId = null),
+          ),
+          ...categories.map(
+            (category) => tab(
+              category.name,
+              _selectedCategoryId == category.id,
+              () => setState(() => _selectedCategoryId = category.id),
+            ),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: colorScheme.onPrimaryContainer,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
+    );
+  }
+
+  /// Kartu unggulan: gambar penuh dengan badge kategori dan judul
+  /// menumpuk di atas gambar.
+  Widget _featuredCard(BuildContext context, Post post) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final bool isDesktop = MediaQuery.sizeOf(context).width >= 600;
+    final imageUrl = post.imageUrl;
+    final date = _formatDate(post.createdAt);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: () => _openDetail(post),
+        child: SizedBox(
+          height: isDesktop ? 320 : 200,
+          width: double.infinity,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (imageUrl != null)
+                Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: colorScheme.surfaceContainerHighest,
+                      child: const Center(
+                        child: Icon(
+                          Icons.image_not_supported,
+                          size: 44,
                         ),
+                      ),
+                    );
+                  },
+                )
+              else
+                Container(
+                  color: colorScheme.surfaceContainerHighest,
+                  child: Center(
+                    child: Icon(
+                      Icons.article_outlined,
+                      size: 48,
+                      color: colorScheme.outline,
+                    ),
                   ),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.outline,
-                        ),
+                ),
+              Positioned(
+                top: 12,
+                left: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
                   ),
-                ],
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    post.categoryName.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.6,
+                      color: colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ],
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(14, 28, 14, 14),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0x00000000),
+                        Color(0xB3000000),
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        post.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_today,
+                            size: 12,
+                            color: Colors.white70,
+                          ),
+                          const SizedBox(width: 4),
+                          if (date.isNotEmpty)
+                            Text(
+                              date,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          const Spacer(),
+                          const Icon(
+                            Icons.arrow_forward,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  /// Sampul gambar card artikel.
-  /// Desktop dibatasi tingginya (280px) agar proporsional dan tidak
-  /// mendominasi viewport; mobile tetap 16:9 mengikuti lebar layar.
-  /// BoxFit.cover menjaga gambar memenuhi area tanpa distorsi.
-  Widget _cardCover(BuildContext context, String imageUrl) {
-    final bool isDesktop = MediaQuery.sizeOf(context).width >= 600;
-    final image = Image.network(
-      imageUrl,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return const Center(child: CircularProgressIndicator());
-      },
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: const Center(
-            child: Icon(Icons.image_not_supported, size: 40),
-          ),
-        );
-      },
-    );
-    if (isDesktop) {
-      return SizedBox(
-        height: 280,
-        width: double.infinity,
-        child: image,
-      );
-    }
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: image,
-    );
-  }
-
-  Widget _articleCard(BuildContext context, Post post) {
+  /// Kartu grid gaya listing web: gambar 4:3 dengan tombol lingkaran
+  /// mengambang di tengah bawah gambar, judul + meta di bawahnya.
+  Widget _gridCard(BuildContext context, Post post) {
     final colorScheme = Theme.of(context).colorScheme;
     final imageUrl = post.imageUrl;
     final date = _formatDate(post.createdAt);
@@ -448,68 +497,250 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (imageUrl != null) _cardCover(context, imageUrl),
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    post.categoryName.toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AspectRatio(
+                  aspectRatio: 4 / 3,
+                  child: imageUrl != null
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: colorScheme.surfaceContainerHighest,
+                              child: const Center(
+                                child: Icon(Icons.image_not_supported),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          color: colorScheme.surfaceContainerHighest,
+                          child: Center(
+                            child: Icon(
+                              Icons.article_outlined,
+                              size: 44,
+                              color: colorScheme.outline,
+                            ),
+                          ),
                         ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    post.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: -20,
+                  child: Center(
+                    child: Material(
+                      elevation: 2,
+                      shape: const CircleBorder(),
+                      color: Colors.white,
+                      child: InkWell(
+                        onTap: () => _openDetail(post),
+                        customBorder: const CircleBorder(),
+                        child: SizedBox(
+                          width: 40,
+                          height: 40,
+                          child: Icon(
+                            Icons.arrow_forward,
+                            size: 18,
+                            color: colorScheme.primary,
+                          ),
                         ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _snippet(post.content),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      if (date.isNotEmpty) ...[
+                ),
+              ],
+            ),
+            const SizedBox(height: 28),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      post.categoryName.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.8,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      post.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
                         Icon(
                           Icons.calendar_today,
                           size: 13,
                           color: colorScheme.outline,
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          date,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                        if (date.isNotEmpty)
+                          Expanded(
+                            child: Text(
+                              date,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
                                     color: colorScheme.outline,
                                   ),
-                        ),
+                            ),
+                          ),
                       ],
-                      const Spacer(),
-                      Icon(
-                        Icons.arrow_forward,
-                        size: 18,
-                        color: colorScheme.primary,
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Baris artikel horizontal: thumbnail kiri, teks kanan.
+  /// Dipakai di mobile; desktop memakai grid [_gridCard].
+  Widget _rowCard(BuildContext context, Post post) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final imageUrl = post.imageUrl;
+    final date = _formatDate(post.createdAt);
+    return Card(
+      elevation: 0,
+      color: colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      child: InkWell(
+        onTap: () => _openDetail(post),
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 96,
+                  height: 104,
+                  child: imageUrl != null
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: colorScheme.surfaceContainerHighest,
+                              child: const Center(
+                                child: Icon(Icons.image_not_supported),
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          color: colorScheme.surfaceContainerHighest,
+                          child: Center(
+                            child: Icon(
+                              Icons.image_not_supported,
+                              color: colorScheme.outline,
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            post.categoryName.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                              color: colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        if (date.isNotEmpty)
+                          Text(
+                            date,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.outline,
+                                    ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      post.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Spacer(),
+                        Icon(
+                          Icons.arrow_forward,
+                          size: 16,
+                          color: colorScheme.primary,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
