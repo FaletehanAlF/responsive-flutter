@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../widgets/category_badge.dart';
 import '../widgets/narata_app_bar.dart';
 import 'edit_post_page.dart';
 
@@ -138,7 +139,7 @@ class _DetailPageState extends State<DetailPage> {
                   OutlinedButton.icon(
                     onPressed: _reload,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Coba Lagi'),
+                    label: const Text('Coba lagi'),
                   ),
                 ],
               ),
@@ -174,7 +175,7 @@ class _DetailPageState extends State<DetailPage> {
                 child: Center(
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxWidth: desktop ? 900 : double.infinity,
+                      maxWidth: desktop ? 760 : double.infinity,
                     ),
                     child: Padding(
                       padding:
@@ -217,16 +218,8 @@ class _DetailPageState extends State<DetailPage> {
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              Text(
-                                post.categoryName.toUpperCase(),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelMedium
-                                    ?.copyWith(
-                                      color: colorScheme.primary,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.6,
-                                    ),
+                              CategoryBadge(
+                                label: post.categoryName,
                               ),
                               if (date.isNotEmpty) ...[
                                 Text(
