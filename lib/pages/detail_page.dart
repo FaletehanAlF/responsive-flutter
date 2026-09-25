@@ -4,7 +4,7 @@ import '../models/post.dart';
 import '../services/api_service.dart';
 import 'edit_post_page.dart';
 
-class DetailPage extends StatelessWidget {
+class DetailPage extends StatefulWidget {
   final int postId;
 
   const DetailPage({
@@ -13,11 +13,30 @@ class DetailPage extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final ApiService apiService = ApiService();
+  State<DetailPage> createState() => _DetailPageState();
+}
 
+class _DetailPageState extends State<DetailPage> {
+  final ApiService apiService = ApiService();
+
+  late Future<Post> futurePost;
+
+  @override
+  void initState() {
+    super.initState();
+    futurePost = apiService.getPostById(widget.postId);
+  }
+
+  void _reload() {
+    setState(() {
+      futurePost = apiService.getPostById(widget.postId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return FutureBuilder<Post>(
-      future: apiService.getPostById(postId),
+      future: futurePost,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -68,7 +87,7 @@ class DetailPage extends StatelessWidget {
                   );
 
                   if (result == true && context.mounted) {
-                    Navigator.pop(context, true);
+                    _reload();
                   }
                 },
               ),
@@ -181,6 +200,23 @@ class DetailPage extends StatelessWidget {
                         ),
                       ),
                     ),
+
+                    if (post.imageUrl != null) ...[
+                      const SizedBox(height: 16),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          post.imageUrl!,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Text(
+                              'Gagal memuat gambar',
+                            );
+                          },
+                        ),
+                      ),
+                    ],
 
                     const SizedBox(height: 20),
 

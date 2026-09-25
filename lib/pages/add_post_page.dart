@@ -112,7 +112,7 @@ class _AddPostPageState extends State<AddPostPage> {
         ),
       );
 
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
 

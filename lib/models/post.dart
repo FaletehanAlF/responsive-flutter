@@ -28,4 +28,13 @@ class Post {
       createdAt: json['created_at'],
     );
   }
+
+  /// Mengubah relative path backend (/uploads/xxx.jpg)
+  /// menjadi URL penuh (http://localhost:8000/uploads/xxx.jpg).
+  /// Return null jika tidak ada gambar agar UI tidak crash.
+  String? get imageUrl {
+    if (image == null || image!.isEmpty) return null;
+    if (image!.startsWith('http')) return image;
+    return 'http://localhost:8000$image';
+  }
 }

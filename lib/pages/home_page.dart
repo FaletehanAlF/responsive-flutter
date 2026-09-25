@@ -34,13 +34,16 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          await Navigator.push(
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddPostPage()),
           );
-          setState(() {
-            posts = apiService.getPosts();
-          });
+          if (!context.mounted) return;
+          if (result == true) {
+            setState(() {
+              posts = apiService.getPosts();
+            });
+          }
         },
         child: const Icon(Icons.add),
       ),
@@ -182,6 +185,23 @@ class _HomePageState extends State<HomePage> {
                           final post = filtered[index];
 
                           return ListTile(
+                            leading: post.imageUrl != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      post.imageUrl!,
+                                      width: 56,
+                                      height: 56,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return const Icon(
+                                          Icons.broken_image,
+                                        );
+                                      },
+                                    ),
+                                  )
+                                : const Icon(Icons.image_not_supported),
                             title: Text(
                               post.title,
                               maxLines: 1,
@@ -200,6 +220,7 @@ class _HomePageState extends State<HomePage> {
                                       DetailPage(postId: post.id),
                                 ),
                               );
+                              if (!context.mounted) return;
                               setState(() {
                                 posts = apiService.getPosts();
                               });
