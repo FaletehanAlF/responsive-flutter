@@ -9,18 +9,20 @@ import '../widgets/narata_app_bar.dart';
 
 class AddPostPage extends StatefulWidget {
   final VoidCallback? onSaved;
+  final ApiService? apiService;
 
-  const AddPostPage({super.key, this.onSaved});
+  const AddPostPage({super.key, this.onSaved, this.apiService});
 
   @override
   State<AddPostPage> createState() => _AddPostPageState();
 }
 
 class _AddPostPageState extends State<AddPostPage> {
-  final ApiService apiService = ApiService();
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
+
+  late final ApiService apiService = widget.apiService ?? ApiService();
 
   XFile? _selectedImage;
   Future<Uint8List>? _previewFuture;

@@ -10,16 +10,18 @@ import '../widgets/narata_app_bar.dart';
 
 class EditPostPage extends StatefulWidget {
   final Post post;
+  final ApiService? apiService;
 
-  const EditPostPage({super.key, required this.post});
+  const EditPostPage({super.key, required this.post, this.apiService});
 
   @override
   State<EditPostPage> createState() => _EditPostPageState();
 }
 
 class _EditPostPageState extends State<EditPostPage> {
-  final ApiService apiService = ApiService();
   final ImagePicker _picker = ImagePicker();
+  late final ApiService apiService = widget.apiService ?? ApiService();
+
   late final TextEditingController _titleController;
   late final TextEditingController _contentController;
 
