@@ -512,7 +512,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text('Teknologi'), findsOneWidget);
       expect(find.text('Pengembangan Dart'), findsOneWidget);
-      expect(find.text('2 artikel'), findsOneWidget);
+      expect(find.text('2 artikel'), findsNWidgets(2));
     });
 
     testWidgets('menampilkan pesan 409 dari server saat hapus gagal', (
