@@ -14,120 +14,116 @@ class CategoryPage extends StatefulWidget {
 
 class _CategoryPageState extends State<CategoryPage> {
   final ApiService apiService = ApiService();
-  final TextEditingController nameController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
 
   late Future<({List<Category> categories, Map<int, int> counts})> _dataFuture;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _dataFuture = _fetchData();
   }
 
   @override
   void dispose() {
-    nameController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
-  void _load() {
-    setState(() {
-      _dataFuture = (() async {
-        final categories = await apiService.getCategories();
-        List<Post> posts = [];
-        try {
-          posts = await apiService.getPosts();
-        } catch (_) {}
-        final counts = <int, int>{};
-        for (final post in posts) {
-          counts[post.categoryId] = (counts[post.categoryId] ?? 0) + 1;
-        }
-        return (categories: categories, counts: counts);
-      })();
-    });
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> addCategory() async {
-    if (nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nama kategori wajib diisi')),
-      );
-      return;
+  Future<({List<Category> categories, Map<int, int> counts})> _fetchData() async {
+    final categories = await apiService.getCategories();
+
+    final counts = <int, int>{};
+    try {
+      final posts = await apiService.getPosts();
+      for (final post in posts) {
+        counts[post.categoryId] = (counts[post.categoryId] ?? 0) + 1;
+      }
+    } on ApiException {
+      rethrow;
+    } catch (_) {
+      // Hitungan artikel bersifat tambahan, kegagalan tidak menghalangi daftar.
     }
+
+    return (categories: categories, counts: counts);
+  }
+
+  void _load() {
+    setState(() => _dataFuture = _fetchData());
+  }
+
+  Future<void> _showCategoryDialog({Category? existing}) async {
+    final controller = TextEditingController(text: existing?.name ?? '');
 
     try {
-      await apiService.addCategory(nameController.text.trim());
-      nameController.clear();
-      if (!mounted) return;
-      _load();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kategori berhasil ditambahkan')),
+      final saved = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: Text(existing == null ? 'Tambah Kategori' : 'Edit Kategori'),
+            content: TextField(
+              controller: controller,
+              autofocus: true,
+              textCapitalization: TextCapitalization.sentences,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => Navigator.pop(dialogContext, true),
+              decoration: const InputDecoration(
+                labelText: 'Nama Kategori',
+                hintText: 'Masukkan nama kategori',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Batal'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Simpan'),
+              ),
+            ],
+          );
+        },
       );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Gagal menambahkan kategori: $e')));
+
+      if (saved != true || !mounted) return;
+
+      final name = controller.text.trim();
+      if (name.isEmpty) {
+        _showMessage('Nama kategori wajib diisi');
+        return;
+      }
+
+      try {
+        if (existing == null) {
+          await apiService.addCategory(name);
+          if (!mounted) return;
+          _showMessage('Kategori berhasil ditambahkan');
+        } else {
+          await apiService.updateCategory(existing.id, name);
+          if (!mounted) return;
+          _showMessage('Kategori berhasil diubah');
+        }
+        _load();
+      } on ApiException catch (e) {
+        if (!mounted) return;
+        _showMessage(e.message);
+      } catch (e) {
+        if (!mounted) return;
+        _showMessage('Gagal menyimpan kategori: $e');
+      }
+    } finally {
+      controller.dispose();
     }
   }
 
-  Future<void> editCategory(Category category) async {
-    final controller = TextEditingController(text: category.name);
-
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Edit Kategori'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'Nama Kategori',
-              hintText: 'Masukkan nama kategori',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('Batal'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                if (controller.text.trim().isEmpty) return;
-                try {
-                  await apiService.updateCategory(
-                    category.id,
-                    controller.text.trim(),
-                  );
-                  if (!dialogContext.mounted) return;
-                  Navigator.pop(dialogContext);
-                  if (!mounted) return;
-                  _load();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Kategori berhasil diubah')),
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Gagal mengubah kategori: $e')),
-                  );
-                }
-              },
-              child: const Text('Simpan'),
-            ),
-          ],
-        );
-      },
-    );
-
-    controller.dispose();
-  }
-
-  Future<void> deleteCategory(Category category) async {
+  Future<void> _confirmDelete(Category category) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -138,15 +134,15 @@ class _CategoryPageState extends State<CategoryPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, false);
-              },
+              onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Batal'),
             ),
             FilledButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, true);
-              },
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
+              onPressed: () => Navigator.pop(dialogContext, true),
               child: const Text('Hapus'),
             ),
           ],
@@ -154,63 +150,20 @@ class _CategoryPageState extends State<CategoryPage> {
       },
     );
 
-    if (confirm != true) return;
+    if (confirm != true || !mounted) return;
 
     try {
       await apiService.deleteCategory(category.id);
       if (!mounted) return;
       _load();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kategori berhasil dihapus')),
-      );
+      _showMessage('Kategori berhasil dihapus');
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      _showMessage(e.message);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Kategori tidak dapat dihapus karena masih digunakan oleh artikel.',
-          ),
-        ),
-      );
+      _showMessage('Gagal menghapus kategori: $e');
     }
-  }
-
-  void _showAddDialog() {
-    nameController.clear();
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Tambah Kategori'),
-          content: TextField(
-            controller: nameController,
-            autofocus: true,
-            textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'Nama Kategori',
-              hintText: 'Masukkan nama kategori',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('Batal'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                await addCategory();
-                if (dialogContext.mounted) {
-                  Navigator.pop(dialogContext);
-                }
-              },
-              child: const Text('Simpan'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
@@ -220,13 +173,14 @@ class _CategoryPageState extends State<CategoryPage> {
       appBar: const NarataAppBar(title: Text('Kategori'), showBack: true),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Tambah Kategori',
-        onPressed: _showAddDialog,
+        onPressed: _showCategoryDialog,
         child: const Icon(Icons.add),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth >= 600;
           final double cap = isDesktop ? 760 : double.infinity;
+
           return Center(
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: cap),
@@ -240,134 +194,97 @@ class _CategoryPageState extends State<CategoryPage> {
                   children: [
                     Text(
                       'Kategori',
-                      style: Theme.of(context).textTheme.headlineSmall
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Kelola kategori artikel.',
-                      style: Theme.of(context).textTheme.bodyMedium
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
                           ?.copyWith(color: colorScheme.outline),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
-                      child:
-                          FutureBuilder<
-                            ({List<Category> categories, Map<int, int> counts})
-                          >(
-                            future: _dataFuture,
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(
-                                  child: CircularProgressIndicator(),
-                                );
-                              }
-                              if (snapshot.hasError) {
-                                return Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Icons.cloud_off_outlined,
-                                        size: 48,
-                                        color: colorScheme.outline,
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text('Error: ${snapshot.error}'),
-                                      const SizedBox(height: 12),
-                                      OutlinedButton.icon(
-                                        onPressed: _load,
-                                        icon: const Icon(Icons.refresh),
-                                        label: const Text('Coba lagi'),
-                                      ),
-                                    ],
+                      child: FutureBuilder<
+                          ({List<Category> categories, Map<int, int> counts})>(
+                        future: _dataFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.cloud_off_outlined,
+                                    size: 48,
+                                    color: colorScheme.outline,
                                   ),
-                                );
-                              }
-                              final data = snapshot.data?.categories ?? [];
-                              final counts = snapshot.data?.counts ?? {};
-                              if (data.isEmpty) {
-                                return const Center(
-                                  child: Text('Belum ada kategori'),
-                                );
-                              }
-
-                              return ListView.separated(
-                                itemCount: data.length,
-                                separatorBuilder: (context, index) =>
-                                    const SizedBox(height: 8),
-                                itemBuilder: (context, index) {
-                                  final category = data[index];
-                                  final count = counts[category.id] ?? 0;
-                                  return Card(
-                                    elevation: 0,
-                                    color: colorScheme.surfaceContainerLow,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      side: BorderSide(
-                                        color: colorScheme.outlineVariant,
-                                      ),
-                                    ),
-                                    child: ListTile(
-                                      leading: Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: colorScheme.primaryContainer,
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        child: Icon(
-                                          Icons.folder_outlined,
-                                          size: 20,
-                                          color: colorScheme.onPrimaryContainer,
-                                        ),
-                                      ),
-                                      title: Text(
-                                        category.name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Gagal memuat kategori',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
                                           fontWeight: FontWeight.w600,
                                         ),
-                                      ),
-                                      subtitle: Text(
-                                        '$count artikel',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color: colorScheme.outline,
-                                            ),
-                                      ),
-                                      trailing: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          IconButton(
-                                            tooltip: 'Ubah',
-                                            onPressed: () =>
-                                                editCategory(category),
-                                            icon: const Icon(
-                                              Icons.edit_outlined,
-                                            ),
-                                          ),
-                                          IconButton(
-                                            tooltip: 'Hapus',
-                                            onPressed: () =>
-                                                deleteCategory(category),
-                                            icon: const Icon(
-                                              Icons.delete_outline,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${snapshot.error}',
+                                    textAlign: TextAlign.center,
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  OutlinedButton.icon(
+                                    onPressed: _load,
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Coba lagi'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          final categories =
+                              snapshot.data?.categories ?? const [];
+                          final counts = snapshot.data?.counts ?? const {};
+
+                          if (categories.isEmpty) {
+                            return const Center(
+                              child: Text('Belum ada kategori'),
+                            );
+                          }
+
+                          return ListView.separated(
+                            itemCount: categories.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final category = categories[index];
+                              return _CategoryTile(
+                                category: category,
+                                count: counts[category.id] ?? 0,
+                                onEdit: () => _showCategoryDialog(
+                                  existing: category,
+                                ),
+                                onDelete: () => _confirmDelete(category),
                               );
                             },
-                          ),
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -375,6 +292,75 @@ class _CategoryPageState extends State<CategoryPage> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _CategoryTile extends StatelessWidget {
+  final Category category;
+  final int count;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _CategoryTile({
+    required this.category,
+    required this.count,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Card(
+      elevation: 0,
+      color: colorScheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: colorScheme.outlineVariant),
+      ),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            Icons.folder_outlined,
+            size: 20,
+            color: colorScheme.onPrimaryContainer,
+          ),
+        ),
+        title: Text(
+          category.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          '$count artikel',
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: colorScheme.outline),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: 'Ubah',
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined),
+            ),
+            IconButton(
+              tooltip: 'Hapus',
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline),
+            ),
+          ],
+        ),
       ),
     );
   }

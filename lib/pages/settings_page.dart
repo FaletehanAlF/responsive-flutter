@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../widgets/narata_app_bar.dart';
 import 'category_page.dart';
 
+const String kAppVersion = '1.0.0';
+
 class SettingsPage extends StatelessWidget {
   final VoidCallback? onDataChanged;
 
@@ -19,10 +21,11 @@ class SettingsPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'NARATA adalah sistem manajemen blog untuk membuat, membaca, mengubah, dan menghapus artikel beserta kategorinya.',
+                'NARATA adalah sistem manajemen blog untuk membuat, membaca, '
+                'mengubah, dan menghapus artikel beserta kategorinya.',
               ),
               SizedBox(height: 12),
-              Text('Version 1.0.0'),
+              Text('Versi $kAppVersion'),
             ],
           ),
           actions: [
@@ -36,11 +39,24 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
+  Future<void> _openCategories(BuildContext context) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CategoryPage()),
+    );
+    onDataChanged?.call();
+  }
+
   Widget _sectionTitle(BuildContext context, String text) {
-    return Text(
-      text,
-      style: Theme.of(context).textTheme.titleMedium
-          ?.copyWith(fontWeight: FontWeight.w600),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        style: Theme.of(context)
+            .textTheme
+            .titleMedium
+            ?.copyWith(fontWeight: FontWeight.w600),
+      ),
     );
   }
 
@@ -67,18 +83,21 @@ class SettingsPage extends StatelessWidget {
                   children: [
                     Text(
                       'Pengaturan',
-                      style: Theme.of(context).textTheme.headlineSmall
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Kelola pengaturan dan informasi aplikasi.',
-                      style: Theme.of(context).textTheme.bodyMedium
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
                           ?.copyWith(color: colorScheme.outline),
                     ),
                     const SizedBox(height: 20),
                     _sectionTitle(context, 'NARATA'),
-                    const SizedBox(height: 8),
                     Card(
                       elevation: 0,
                       color: colorScheme.surfaceContainerLow,
@@ -103,11 +122,11 @@ class SettingsPage extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 16),
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  const Text(
                                     'NARATA',
                                     style: TextStyle(
                                       fontSize: 20,
@@ -115,10 +134,16 @@ class SettingsPage extends StatelessWidget {
                                       letterSpacing: 1.2,
                                     ),
                                   ),
-                                  SizedBox(height: 2),
-                                  Text('Blog Management'),
-                                  SizedBox(height: 2),
-                                  Text('Version 1.0.0'),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Blog Management • Versi $kAppVersion',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: colorScheme.outline,
+                                        ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -128,7 +153,6 @@ class SettingsPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                     _sectionTitle(context, 'Pengaturan'),
-                    const SizedBox(height: 8),
                     Card(
                       elevation: 1,
                       shape: RoundedRectangleBorder(
@@ -143,17 +167,13 @@ class SettingsPage extends StatelessWidget {
                               'Tambah, edit, dan hapus kategori artikel.',
                             ),
                             trailing: const Icon(Icons.chevron_right),
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const CategoryPage(),
-                                ),
-                              );
-                              onDataChanged?.call();
-                            },
+                            onTap: () => _openCategories(context),
                           ),
-                          const Divider(height: 1, indent: 16, endIndent: 16),
+                          const Divider(
+                            height: 1,
+                            indent: 16,
+                            endIndent: 16,
+                          ),
                           ListTile(
                             leading: const Icon(Icons.info_outline),
                             title: const Text('Tentang NARATA'),
@@ -166,7 +186,6 @@ class SettingsPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                     _sectionTitle(context, 'Informasi Aplikasi'),
-                    const SizedBox(height: 8),
                     Card(
                       elevation: 0,
                       color: colorScheme.surfaceContainerLow,
@@ -181,26 +200,12 @@ class SettingsPage extends StatelessWidget {
                         ),
                         child: Column(
                           children: [
-                            Row(
-                              children: [
-                                const Expanded(child: Text('Version')),
-                                Text(
-                                  '1.0.0',
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
+                            _infoRow(context, 'Versi', kAppVersion),
                             const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Expanded(child: Text('Sistem')),
-                                Text(
-                                  'Blog Management System',
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(fontWeight: FontWeight.w600),
-                                ),
-                              ],
+                            _infoRow(
+                              context,
+                              'Sistem',
+                              'Blog Management System',
                             ),
                           ],
                         ),
@@ -214,6 +219,21 @@ class SettingsPage extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  Widget _infoRow(BuildContext context, String label, String value) {
+    return Row(
+      children: [
+        Expanded(child: Text(label)),
+        Text(
+          value,
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ],
     );
   }
 }

@@ -15,25 +15,26 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _index = 0;
-
   int _dataVersion = 0;
-
   int? _detailPostId;
 
   void _notifyDataChanged() {
-    setState(() {
-      _dataVersion++;
-    });
+    setState(() => _dataVersion++);
   }
 
   void _handleAddSaved() {
-    _notifyDataChanged();
     setState(() {
+      _dataVersion++;
       _index = 0;
+      _detailPostId = null;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Artikel berhasil ditambahkan')),
-    );
+    _showMessage('Artikel berhasil ditambahkan');
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _select(int value) {
@@ -44,37 +45,39 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _openDetail(int id) {
-    setState(() {
-      _detailPostId = id;
-    });
+    setState(() => _detailPostId = id);
   }
 
   void _closeDetail(bool changed) {
     if (_detailPostId == null) return;
     setState(() {
       _detailPostId = null;
+      if (changed) _dataVersion++;
     });
-    if (changed) _notifyDataChanged();
-  }
-
-  IndexedStack _buildStack() {
-    return IndexedStack(
-      index: _index,
-      children: [
-        HomePage(refreshSignal: _dataVersion, onOpenDetail: _openDetail),
-        ArticlesPage(refreshSignal: _dataVersion, onOpenDetail: _openDetail),
-        AddPostPage(onSaved: _handleAddSaved),
-        SettingsPage(onDataChanged: _notifyDataChanged),
-      ],
-    );
   }
 
   Widget _buildBody() {
     final detailId = _detailPostId;
     if (detailId != null) {
-      return DetailPage(postId: detailId, onClose: _closeDetail);
+      return DetailPage(
+        key: ValueKey(detailId),
+        postId: detailId,
+        onClose: _closeDetail,
+      );
     }
-    return _buildStack();
+
+    return IndexedStack(
+      index: _index,
+      children: [
+        HomePage(refreshSignal: _dataVersion, onOpenDetail: _openDetail),
+        ArticlesPage(
+          refreshSignal: _dataVersion,
+          onOpenDetail: _openDetail,
+        ),
+        AddPostPage(onSaved: _handleAddSaved),
+        SettingsPage(onDataChanged: _notifyDataChanged),
+      ],
+    );
   }
 
   @override
@@ -87,10 +90,7 @@ class _MainShellState extends State<MainShell> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth >= 600;
-          if (isDesktop) {
-            return _buildDesktop();
-          }
-          return _buildMobile();
+          return isDesktop ? _buildDesktop() : _buildMobile();
         },
       ),
     );
@@ -114,8 +114,8 @@ class _MainShellState extends State<MainShell> {
             label: 'Artikel',
           ),
           NavigationDestination(
-            icon: Icon(Icons.add),
-            selectedIcon: Icon(Icons.add),
+            icon: Icon(Icons.add_circle_outline),
+            selectedIcon: Icon(Icons.add_circle),
             label: 'Tambah',
           ),
           NavigationDestination(
@@ -132,11 +132,10 @@ class _MainShellState extends State<MainShell> {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           NavigationRail(
             extended: true,
-            minExtendedWidth: 250,
+            minExtendedWidth: 240,
             selectedIndex: _index,
             onDestinationSelected: _select,
             groupAlignment: -1.0,
@@ -147,43 +146,19 @@ class _MainShellState extends State<MainShell> {
               color: colorScheme.primary,
               fontWeight: FontWeight.w700,
             ),
-            leading: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 16, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'NARATA',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 20,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Blog Management',
-                    style: TextStyle(fontSize: 12, color: colorScheme.outline),
-                  ),
-                ],
-              ),
+            leading: const Padding(
+              padding: EdgeInsets.fromLTRB(24, 24, 16, 8),
+              child: _BrandHeader(),
             ),
             trailing: Padding(
               padding: const EdgeInsets.fromLTRB(24, 8, 16, 24),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Divider(),
                   const SizedBox(height: 8),
                   Text(
-                    'Blog Management',
-                    style: TextStyle(fontSize: 12, color: colorScheme.outline),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'v1.0.0',
+                    'Versi 1.0.0',
                     style: TextStyle(fontSize: 12, color: colorScheme.outline),
                   ),
                 ],
@@ -201,8 +176,8 @@ class _MainShellState extends State<MainShell> {
                 label: Text('Artikel'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.add),
-                selectedIcon: Icon(Icons.add),
+                icon: Icon(Icons.add_circle_outline),
+                selectedIcon: Icon(Icons.add_circle),
                 label: Text('Tambah Artikel'),
               ),
               NavigationRailDestination(
@@ -216,6 +191,34 @@ class _MainShellState extends State<MainShell> {
           Expanded(child: _buildBody()),
         ],
       ),
+    );
+  }
+}
+
+class _BrandHeader extends StatelessWidget {
+  const _BrandHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          'NARATA',
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Blog Management',
+          style: TextStyle(fontSize: 12, color: colorScheme.outline),
+        ),
+      ],
     );
   }
 }

@@ -20,8 +20,8 @@ class EditPostPage extends StatefulWidget {
 class _EditPostPageState extends State<EditPostPage> {
   final ApiService apiService = ApiService();
   final ImagePicker _picker = ImagePicker();
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _contentController = TextEditingController();
+  late final TextEditingController _titleController;
+  late final TextEditingController _contentController;
 
   List<Category> _categories = const [];
   int? _selectedCategoryId;

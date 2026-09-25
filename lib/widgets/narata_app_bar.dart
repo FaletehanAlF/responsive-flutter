@@ -23,33 +23,33 @@ class NarataAppBar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   void _open(BuildContext context, Widget page) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => page),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => page));
   }
 
   @override
   Widget build(BuildContext context) {
+    final Widget? leading;
+    if (showBack) {
+      leading = onBack != null
+          ? IconButton(
+              tooltip: 'Kembali',
+              icon: const Icon(Icons.arrow_back),
+              onPressed: onBack,
+            )
+          : const BackButton();
+    } else {
+      leading = showNotification
+          ? IconButton(
+              tooltip: 'Notifikasi',
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () => _open(context, const NotificationPage()),
+            )
+          : null;
+    }
+
     return AppBar(
       centerTitle: true,
-      automaticallyImplyLeading: true,
-      leading: showBack
-          ? (onBack == null
-              ? null
-              : IconButton(
-                  tooltip: 'Kembali',
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: onBack,
-                ))
-          : (showNotification
-              ? IconButton(
-                  tooltip: 'Notifikasi',
-                  icon: const Icon(Icons.notifications_outlined),
-                  onPressed: () =>
-                      _open(context, const NotificationPage()),
-                )
-              : null),
+      leading: leading,
       title: title,
       actions: [
         if (showBack && showNotification)
