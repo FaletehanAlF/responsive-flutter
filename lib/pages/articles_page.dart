@@ -280,6 +280,22 @@ class _ArticlesPageState extends State<ArticlesPage> {
                               itemBuilder: (context, index) =>
                                   _listCard(context, filtered[index]),
                             );
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${filtered.length} artikel ditemukan',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: colorScheme.outline,
+                                      ),
+                                ),
+                                const SizedBox(height: 8),
+                                content,
+                              ],
+                            );
                           },
                         ),
                       ],
