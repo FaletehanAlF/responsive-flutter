@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/narata_app_bar.dart';
 import 'category_page.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -48,10 +49,7 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text('Pengaturan'),
-      ),
+      appBar: const NarataAppBar(title: Text('Pengaturan')),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool desktop = constraints.maxWidth >= 600;
