@@ -1,6 +1,8 @@
-import 'dart:io';
+import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/category.dart';
 import '../services/api_service.dart';
@@ -59,15 +61,25 @@ class _AddPostPageState extends State<AddPostPage> {
   }
 
   Future<void> pickImageFromGallery() async {
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.gallery,
-    );
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+      );
 
-    if (image == null) return;
+      if (image == null) return;
 
-    setState(() {
-      _selectedImage = image;
-    });
+      setState(() {
+        _selectedImage = image;
+      });
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memilih gambar: ${e.message}'),
+        ),
+      );
+    }
   }
 
   Future<void> savePost() async {
@@ -219,11 +231,31 @@ class _AddPostPageState extends State<AddPostPage> {
                   const SizedBox(height: 16),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      File(_selectedImage!.path),
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    ),
+                    child: kIsWeb
+                        ? Image.network(
+                            _selectedImage!.path,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          )
+                        : FutureBuilder<Uint8List>(
+                            future: _selectedImage!.readAsBytes(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
+                              if (snapshot.hasError || !snapshot.hasData) {
+                                return const Text('Gagal memuat preview');
+                              }
+                              return Image.memory(
+                                snapshot.data!,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              );
+                            },
+                          ),
                   ),
                 ],
 
