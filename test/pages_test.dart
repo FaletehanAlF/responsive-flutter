@@ -144,12 +144,12 @@ void main() {
 
         expect(tester.takeException(), isNull);
         expect(find.text('Gagal memuat artikel'), findsOneWidget);
-        expect(find.text('Coba lagi'), findsOneWidget);
+        expect(find.text('Kategori tidak dapat dimuat'), findsOneWidget);
       });
     });
 
     group('ArticlesPage ($label)', () {
-      testWidgets('merender网格 artikel tanpa error', (tester) async {
+      testWidgets('merender grid artikel tanpa error', (tester) async {
         tester.view.physicalSize = size;
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.reset);
