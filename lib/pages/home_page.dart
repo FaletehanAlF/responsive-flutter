@@ -359,7 +359,7 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            cover?,
+            if (imageUrl != null) cover,
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
