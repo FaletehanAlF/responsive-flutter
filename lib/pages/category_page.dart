@@ -14,8 +14,6 @@ class CategoryPage extends StatefulWidget {
 }
 
 class _CategoryPageState extends State<CategoryPage> {
-  final TextEditingController _nameController = TextEditingController();
-
   late final ApiService apiService = widget.apiService ?? ApiService();
 
   late Future<({List<Category> categories, Map<int, int> counts})> _dataFuture;
@@ -24,12 +22,6 @@ class _CategoryPageState extends State<CategoryPage> {
   void initState() {
     super.initState();
     _dataFuture = _fetchData();
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
   }
 
   void _showMessage(String message) {
@@ -64,67 +56,36 @@ class _CategoryPageState extends State<CategoryPage> {
   }
 
   Future<void> _showCategoryDialog({Category? existing}) async {
-    final controller = TextEditingController(text: existing?.name ?? '');
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => _CategoryNameDialog(category: existing),
+    );
 
+    if (name == null || !mounted) return;
+
+    if (name.trim().isEmpty) {
+      _showMessage('Nama kategori wajib diisi');
+      return;
+    }
+
+    final trimmed = name.trim();
     try {
-      final saved = await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) {
-          return AlertDialog(
-            title: Text(existing == null ? 'Tambah Kategori' : 'Edit Kategori'),
-            content: TextField(
-              controller: controller,
-              autofocus: true,
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => Navigator.pop(dialogContext, true),
-              decoration: const InputDecoration(
-                labelText: 'Nama Kategori',
-                hintText: 'Masukkan nama kategori',
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Batal'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Simpan'),
-              ),
-            ],
-          );
-        },
-      );
-
-      if (saved != true || !mounted) return;
-
-      final name = controller.text.trim();
-      if (name.isEmpty) {
-        _showMessage('Nama kategori wajib diisi');
-        return;
-      }
-
-      try {
-        if (existing == null) {
-          await apiService.addCategory(name);
-          if (!mounted) return;
-          _showMessage('Kategori berhasil ditambahkan');
-        } else {
-          await apiService.updateCategory(existing.id, name);
-          if (!mounted) return;
-          _showMessage('Kategori berhasil diubah');
-        }
-        _load();
-      } on ApiException catch (e) {
+      if (existing == null) {
+        await apiService.addCategory(trimmed);
         if (!mounted) return;
-        _showMessage(e.message);
-      } catch (e) {
+        _showMessage('Kategori berhasil ditambahkan');
+      } else {
+        await apiService.updateCategory(existing.id, trimmed);
         if (!mounted) return;
-        _showMessage('Gagal menyimpan kategori: $e');
+        _showMessage('Kategori berhasil diubah');
       }
-    } finally {
-      controller.dispose();
+      _load();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      _showMessage(e.message);
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage('Gagal menyimpan kategori: $e');
     }
   }
 
@@ -298,6 +259,57 @@ class _CategoryPageState extends State<CategoryPage> {
           );
         },
       ),
+    );
+  }
+}
+
+class _CategoryNameDialog extends StatefulWidget {
+  final Category? category;
+
+  const _CategoryNameDialog({this.category});
+
+  @override
+  State<_CategoryNameDialog> createState() => _CategoryNameDialogState();
+}
+
+class _CategoryNameDialogState extends State<_CategoryNameDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.category?.name ?? '',
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    Navigator.pop(context, _controller.text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEdit = widget.category != null;
+    return AlertDialog(
+      title: Text(isEdit ? 'Edit Kategori' : 'Tambah Kategori'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        textCapitalization: TextCapitalization.sentences,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _submit(),
+        decoration: const InputDecoration(
+          labelText: 'Nama Kategori',
+          hintText: 'Masukkan nama kategori',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Batal'),
+        ),
+        FilledButton(onPressed: _submit, child: const Text('Simpan')),
+      ],
     );
   }
 }
