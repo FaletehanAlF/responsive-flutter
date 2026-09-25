@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/category.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../widgets/category_badge.dart';
 import '../widgets/narata_app_bar.dart';
 import 'detail_page.dart';
 
@@ -110,7 +111,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
         builder: (context, constraints) {
           final bool wideGrid = constraints.maxWidth >= 1100;
           final bool isDesktop = constraints.maxWidth >= 600;
-          final double cap = wideGrid ? 1120 : (isDesktop ? 760 : double.infinity);
+          final double cap = wideGrid ? 1100 : (isDesktop ? 760 : double.infinity);
           return RefreshIndicator(
             onRefresh: () async => _load(),
             child: SingleChildScrollView(
