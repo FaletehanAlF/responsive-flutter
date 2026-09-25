@@ -313,7 +313,7 @@ class _HomePageState extends State<HomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: isGrid ? MainAxisSize.max : MainAxisSize.min,
           children: [
-            if (cover != null) cover,
+            ?cover,
             body,
           ],
         ),
