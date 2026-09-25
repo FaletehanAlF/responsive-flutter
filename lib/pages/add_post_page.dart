@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../models/category.dart';
 import '../services/api_service.dart';
+import '../widgets/narata_app_bar.dart';
 
 class AddPostPage extends StatefulWidget {
   final VoidCallback? onSaved;
@@ -163,10 +164,9 @@ class _AddPostPageState extends State<AddPostPage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        automaticallyImplyLeading: widget.onSaved == null,
+      appBar: NarataAppBar(
         title: const Text('Tambah Artikel'),
+        showBack: widget.onSaved == null,
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

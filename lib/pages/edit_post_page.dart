@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/post.dart';
 import '../models/category.dart';
 import '../services/api_service.dart';
+import '../widgets/narata_app_bar.dart';
 
 class EditPostPage extends StatefulWidget {
   final Post post;
@@ -151,7 +152,10 @@ class _EditPostPageState extends State<EditPostPage> {
     final oldImageUrl = widget.post.imageUrl;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Artikel')),
+      appBar: const NarataAppBar(
+        title: Text('Edit Artikel'),
+        showBack: true,
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth >= 600;
