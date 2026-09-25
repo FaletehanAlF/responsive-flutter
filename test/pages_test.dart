@@ -241,12 +241,27 @@ void main() {
     testWidgets('dialog hapus menampilkan judul artikel', (tester) async {
       await _pump(tester, DetailPage(postId: 2, apiService: _api()));
 
-      await tester.tap(find.text('Hapus Artikel'));
-      await tester.pump();
+      await _tap(tester, find.text('Hapus Artikel'));
 
       expect(tester.takeException(), isNull);
       expect(find.text('Hapus artikel?'), findsOneWidget);
-      expect(find.textContaining('Artikel Nomor 2'), findsOneWidget);
+      expect(
+        find.textContaining('Artikel Nomor 2'),
+        findsWidgets,
+        reason: 'judul artikel tampil di app bar dan dialog',
+      );
+    });
+
+    testWidgets('tombol coba lagi pada state error tidak melempar error', (
+      tester,
+    ) async {
+      await _pump(tester, DetailPage(postId: 999, apiService: _api()));
+      expect(find.text('Coba lagi'), findsOneWidget);
+
+      await _tap(tester, find.text('Coba lagi'));
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('berpindah postId menampilkan data terbaru', (tester) async {
