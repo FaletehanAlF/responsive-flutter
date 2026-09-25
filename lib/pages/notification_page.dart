@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/narata_app_bar.dart';
+
 class NotificationPage extends StatelessWidget {
   const NotificationPage({super.key});
 
@@ -7,9 +9,10 @@ class NotificationPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text('Notifikasi'),
+      appBar: const NarataAppBar(
+        title: Text('Notifikasi'),
+        showBack: true,
+        showNotification: false,
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
