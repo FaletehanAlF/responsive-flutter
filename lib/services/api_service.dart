@@ -140,9 +140,6 @@ class ApiService {
     String? image,
     XFile? newImage,
   }) async {
-    // Jika pengguna memilih gambar baru, kirim sebagai multipart
-    // agar konsisten dengan AddPostPage. Jika tidak, kirim JSON biasa
-    // dan pertahankan gambar lama.
     if (newImage != null) {
       final request = http.MultipartRequest(
         'PUT',

@@ -34,10 +34,6 @@ class Post {
     );
   }
 
-  /// Mengubah relative path backend (/uploads/xxx.jpg)
-  /// menjadi URL penuh (http://localhost:8000/uploads/xxx.jpg).
-  /// Return null jika tidak ada gambar agar UI tidak me-render Image.network.
-  /// Dijamin tidak menghasilkan double slash dan tidak menduplikasi base URL.
   String? get imageUrl {
     if (image == null) return null;
     final value = image!.trim();

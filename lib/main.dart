@@ -5,8 +5,6 @@ import 'pages/main_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Muat data locale Indonesia agar DateFormat('id') bisa dipakai
-  // di seluruh halaman untuk memformat tanggal artikel.
   await initializeDateFormatting('id', null);
   runApp(const MyApp());
 }

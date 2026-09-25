@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'category_page.dart';
 
-/// Halaman pengaturan: tentang aplikasi, kelola kategori, info versi.
 class SettingsPage extends StatelessWidget {
   final VoidCallback? onDataChanged;
 

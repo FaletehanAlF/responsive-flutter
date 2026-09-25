@@ -7,7 +7,6 @@ import '../models/post.dart';
 import '../models/category.dart';
 import '../services/api_service.dart';
 
-/// Form ubah artikel: desain konsisten dengan halaman tambah artikel.
 class EditPostPage extends StatefulWidget {
   final Post post;
 

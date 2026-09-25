@@ -4,7 +4,6 @@ import '../models/category.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
 
-/// Halaman kelola kategori: daftar + jumlah artikel, tambah, ubah, hapus.
 class CategoryPage extends StatefulWidget {
   const CategoryPage({super.key});
 
@@ -38,9 +37,7 @@ class _CategoryPageState extends State<CategoryPage> {
         List<Post> posts = [];
         try {
           posts = await apiService.getPosts();
-        } catch (_) {
-          // Jumlah artikel opsional: daftar kategori tetap tampil.
-        }
+        } catch (_) {}
         final counts = <int, int>{};
         for (final post in posts) {
           counts[post.categoryId] = (counts[post.categoryId] ?? 0) + 1;

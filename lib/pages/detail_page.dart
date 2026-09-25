@@ -5,8 +5,6 @@ import '../models/post.dart';
 import '../services/api_service.dart';
 import 'edit_post_page.dart';
 
-/// Halaman detail artikel: gambar utama di atas, badge kategori,
-/// judul besar, dan isi artikel.
 class DetailPage extends StatefulWidget {
   final int postId;
 
@@ -33,8 +31,6 @@ class _DetailPageState extends State<DetailPage> {
     });
   }
 
-  /// Format tanggal via package intl (locale Indonesia),
-  /// contoh: "25 Sep 2026". Kembalikan mentah bila tak ter-parse.
   String _formatDate(String raw) {
     final value = raw.trim();
     if (value.isEmpty) return '';
@@ -43,9 +39,6 @@ class _DetailPageState extends State<DetailPage> {
     return DateFormat('d MMM yyyy', 'id').format(parsed);
   }
 
-  /// Gambar utama artikel.
-  /// Mobile (fullBleed): memenuhi lebar layar tanpa radius, tinggi 260px.
-  /// Desktop: di dalam kontainer dengan radius 16px, tinggi 340px.
   Widget _heroImage(
     BuildContext context,
     String imageUrl, {

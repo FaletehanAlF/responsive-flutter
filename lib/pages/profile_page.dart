@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Halaman profil sederhana tanpa autentikasi.
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 

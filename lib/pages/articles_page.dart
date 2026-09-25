@@ -8,8 +8,6 @@ import 'detail_page.dart';
 import 'notification_page.dart';
 import 'profile_page.dart';
 
-/// Halaman pengelolaan semua artikel: pencarian, filter kategori,
-/// daftar 1 kolom di mobile dan grid 2 kolom di layar lebar.
 class ArticlesPage extends StatefulWidget {
   final int refreshSignal;
 
@@ -82,8 +80,6 @@ class _ArticlesPageState extends State<ArticlesPage> {
     return '${clean.substring(0, 110)}…';
   }
 
-  /// Format tanggal via package intl (locale Indonesia),
-  /// contoh: "25 Sep 2026". Kembalikan mentah bila tak ter-parse.
   String _formatDate(String raw) {
     final value = raw.trim();
     if (value.isEmpty) return '';
@@ -353,8 +349,6 @@ class _ArticlesPageState extends State<ArticlesPage> {
         );
       },
     );
-    // Desktop: batasi tinggi agar gambar tidak mendominasi viewport.
-    // Mobile (maxHeight null): pertahankan 16:9 mengikuti lebar layar.
     if (maxHeight != null) {
       return SizedBox(
         height: maxHeight,

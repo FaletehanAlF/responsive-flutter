@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Halaman notifikasi sederhana (empty state, tanpa backend baru).
 class NotificationPage extends StatelessWidget {
   const NotificationPage({super.key});
 

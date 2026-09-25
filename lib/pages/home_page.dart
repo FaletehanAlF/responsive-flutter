@@ -9,8 +9,6 @@ import 'detail_page.dart';
 import 'notification_page.dart';
 import 'profile_page.dart';
 
-/// Halaman utama NARATA: sambutan, kartu unggulan, tab kategori,
-/// dan daftar artikel horizontal.
 class HomePage extends StatefulWidget {
   final int refreshSignal;
 
@@ -52,15 +50,12 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  /// Cuplikan singkat isi artikel, diakhiri "...." bila terpotong.
   String _snippet(String content, [int max = 100]) {
     final clean = content.trim().replaceAll(RegExp(r'\s+'), ' ');
     if (clean.length <= max) return clean;
     return '${clean.substring(0, max)}....';
   }
 
-  /// Format tanggal via package intl (locale Indonesia),
-  /// contoh: "25 Sep 2026". Kembalikan mentah bila tak ter-parse.
   String _formatDate(String raw) {
     final value = raw.trim();
     if (value.isEmpty) return '';
@@ -125,6 +120,7 @@ class _HomePageState extends State<HomePage> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth >= 600;
+          final bool useGrid = constraints.maxWidth >= 700;
           final double cap = isDesktop ? 1120 : double.infinity;
           return RefreshIndicator(
             onRefresh: () async => _load(),
@@ -240,7 +236,7 @@ class _HomePageState extends State<HomePage> {
                                 if (filtered.isEmpty)
                                   _emptyState(context)
                                 else if (filtered.length > 1)
-                                  if (isDesktop)
+                                  if (useGrid)
                                     GridView.builder(
                                       shrinkWrap: true,
                                       physics:
@@ -254,7 +250,7 @@ class _HomePageState extends State<HomePage> {
                                                 : 2,
                                         crossAxisSpacing: 12,
                                         mainAxisSpacing: 12,
-                                        childAspectRatio: 0.78,
+                                        childAspectRatio: 0.85,
                                       ),
                                       itemBuilder: (context, index) =>
                                           _gridCard(
@@ -292,7 +288,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// Tab kategori gaya teks dengan garis bawah pada tab aktif.
   Widget _categoryTabs(BuildContext context, List<Category> categories) {
     final colorScheme = Theme.of(context).colorScheme;
     Widget tab(String label, bool active, VoidCallback onTap) {
@@ -345,8 +340,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// Kartu unggulan: gambar penuh dengan badge kategori dan judul
-  /// menumpuk di atas gambar.
   Widget _featuredCard(BuildContext context, Post post) {
     final colorScheme = Theme.of(context).colorScheme;
     final bool isDesktop = MediaQuery.sizeOf(context).width >= 600;
@@ -361,7 +354,7 @@ class _HomePageState extends State<HomePage> {
       child: InkWell(
         onTap: () => _openDetail(post),
         child: SizedBox(
-          height: isDesktop ? 320 : 200,
+          height: isDesktop ? 280 : 200,
           width: double.infinity,
           child: Stack(
             fit: StackFit.expand,
@@ -500,8 +493,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// Kartu grid gaya listing web: gambar 4:3 dengan tombol lingkaran
-  /// mengambang di tengah bawah gambar, judul + meta di bawahnya.
   Widget _gridCard(BuildContext context, Post post) {
     final colorScheme = Theme.of(context).colorScheme;
     final imageUrl = post.imageUrl;
@@ -521,7 +512,7 @@ class _HomePageState extends State<HomePage> {
               clipBehavior: Clip.none,
               children: [
                 AspectRatio(
-                  aspectRatio: 4 / 3,
+                  aspectRatio: 16 / 10,
                   child: imageUrl != null
                       ? Image.network(
                           imageUrl,
@@ -647,8 +638,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// Baris artikel horizontal: thumbnail kiri, teks kanan.
-  /// Dipakai di mobile; desktop memakai grid [_gridCard].
   Widget _rowCard(BuildContext context, Post post) {
     final colorScheme = Theme.of(context).colorScheme;
     final imageUrl = post.imageUrl;

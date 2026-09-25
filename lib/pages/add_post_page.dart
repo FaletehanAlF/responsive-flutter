@@ -6,11 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/category.dart';
 import '../services/api_service.dart';
 
-/// Form tambah artikel: gambar sampul di paling atas, lalu
-/// judul, isi, dan kategori.
 class AddPostPage extends StatefulWidget {
-  /// Dipanggil saat berhasil menyimpan dalam mode tab MainShell.
-  /// Jika null, halaman berperilaku sebagai route push dengan pop(true).
   final VoidCallback? onSaved;
 
   const AddPostPage({super.key, this.onSaved});
@@ -132,7 +128,6 @@ class _AddPostPageState extends State<AddPostPage> {
 
       if (!mounted) return;
 
-      // Mode tab MainShell: reset form + beri tahu shell lewat callback.
       if (widget.onSaved != null) {
         _resetForm();
         widget.onSaved!.call();
@@ -301,8 +296,6 @@ class _AddPostPageState extends State<AddPostPage> {
     );
   }
 
-  /// Area pilih gambar di paling atas form: tampil sebagai area
-  /// upload visual saat kosong, pratinjau terbatas saat terisi.
   Widget _imagePicker(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final bool isDesktop = MediaQuery.sizeOf(context).width >= 600;

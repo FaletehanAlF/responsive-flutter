@@ -5,11 +5,6 @@ import 'articles_page.dart';
 import 'home_page.dart';
 import 'settings_page.dart';
 
-/// Navigasi utama NARATA yang responsif:
-/// - Mobile (< 600px): NavigationBar di bawah.
-/// - Desktop/Web (>= 600px): sidebar kiri (NavigationRail extended 250px).
-/// Menggunakan IndexedStack + state _index yang sama di kedua layout
-/// agar state halaman tidak hilang saat berpindah menu.
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -20,8 +15,6 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
 
-  /// Bertambah setiap kali ada perubahan data (tambah/edit/hapus/kategori).
-  /// Diteruskan ke Home & Articles agar mereka reload tanpa F5.
   int _dataVersion = 0;
 
   void _notifyDataChanged() {
@@ -71,7 +64,6 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  /// Layout mobile: konten penuh + NavigationBar bawah.
   Widget _buildMobile() {
     return Scaffold(
       body: _buildStack(),
@@ -104,9 +96,6 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  /// Layout desktop/web: sidebar kiri 250px + konten di kanan.
-  /// Setiap halaman membatasi kontennya sendiri sehingga area kanan
-  /// tidak melebar penuh.
   Widget _buildDesktop() {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
