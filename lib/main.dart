@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'pages/home_page.dart';
+
+import 'pages/main_shell.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,7 +14,23 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'NARATA',
-      home: const HomePage(),
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF0F766E),
+        ),
+        cardTheme: CardThemeData(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      home: const MainShell(),
     );
   }
 }

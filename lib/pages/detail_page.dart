@@ -7,10 +7,7 @@ import 'edit_post_page.dart';
 class DetailPage extends StatefulWidget {
   final int postId;
 
-  const DetailPage({
-    super.key,
-    required this.postId,
-  });
+  const DetailPage({super.key, required this.postId});
 
   @override
   State<DetailPage> createState() => _DetailPageState();
@@ -33,6 +30,14 @@ class _DetailPageState extends State<DetailPage> {
     });
   }
 
+  String _formatDate(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty) return '';
+    if (value.contains('T')) return value.split('T').first;
+    if (value.length >= 10) return value.substring(0, 10);
+    return value;
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Post>(
@@ -40,59 +45,46 @@ class _DetailPageState extends State<DetailPage> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
         if (snapshot.hasError) {
           return Scaffold(
-            appBar: AppBar(
-              title: const Text('Detail Artikel'),
-            ),
-            body: Center(
-              child: Text(
-                'Error: ${snapshot.error}',
-              ),
-            ),
+            appBar: AppBar(title: const Text('Detail Artikel')),
+            body: Center(child: Text('Error: ${snapshot.error}')),
           );
         }
 
         if (!snapshot.hasData) {
           return const Scaffold(
-            body: Center(
-              child: Text('Artikel tidak ditemukan'),
-            ),
+            body: Center(child: Text('Artikel tidak ditemukan')),
           );
         }
 
         final post = snapshot.data!;
+        final imageUrl = post.imageUrl;
+        final date = _formatDate(post.createdAt);
 
         return Scaffold(
           appBar: AppBar(
             title: const Text('Detail Artikel'),
             actions: [
               IconButton(
-                icon: const Icon(Icons.edit),
+                icon: const Icon(Icons.edit_outlined),
                 tooltip: 'Edit Artikel',
                 onPressed: () async {
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => EditPostPage(
-                        post: post,
-                      ),
+                      builder: (context) => EditPostPage(post: post),
                     ),
                   );
-
-                  if (result == true && context.mounted) {
-                    _reload();
-                  }
+                  if (result == true && context.mounted) _reload();
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.delete),
+                icon: const Icon(Icons.delete_outline),
                 tooltip: 'Hapus Artikel',
                 onPressed: () async {
                   final confirm = await showDialog<bool>(
@@ -105,15 +97,13 @@ class _DetailPageState extends State<DetailPage> {
                         ),
                         actions: [
                           TextButton(
-                            onPressed: () {
-                              Navigator.pop(dialogContext, false);
-                            },
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, false),
                             child: const Text('Batal'),
                           ),
                           TextButton(
-                            onPressed: () {
-                              Navigator.pop(dialogContext, true);
-                            },
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, true),
                             child: const Text('Hapus'),
                           ),
                         ],
@@ -125,25 +115,17 @@ class _DetailPageState extends State<DetailPage> {
 
                   try {
                     await apiService.deletePost(post.id);
-
                     if (!context.mounted) return;
-
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Artikel berhasil dihapus'),
                       ),
                     );
-
                     Navigator.pop(context, true);
                   } catch (e) {
                     if (!context.mounted) return;
-
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Gagal menghapus artikel: $e',
-                        ),
-                      ),
+                      SnackBar(content: Text('Gagal menghapus artikel: $e')),
                     );
                   }
                 },
@@ -153,15 +135,10 @@ class _DetailPageState extends State<DetailPage> {
           body: LayoutBuilder(
             builder: (context, constraints) {
               final bool isDesktop = constraints.maxWidth >= 600;
-
               double horizontalPadding = 16;
-
               if (isDesktop) {
                 horizontalPadding = (constraints.maxWidth - 700) / 2;
-
-                if (horizontalPadding < 16) {
-                  horizontalPadding = 16;
-                }
+                if (horizontalPadding < 16) horizontalPadding = 16;
               }
 
               return SingleChildScrollView(
@@ -174,58 +151,99 @@ class _DetailPageState extends State<DetailPage> {
                   children: [
                     Text(
                       post.title,
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
-
                     const SizedBox(height: 12),
-
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        post.categoryName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .secondaryContainer,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            post.categoryName,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSecondaryContainer,
+                            ),
+                          ),
                         ),
-                      ),
+                        if (date.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.calendar_today, size: 14),
+                                const SizedBox(width: 6),
+                                Text(date),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
-
-                    if (post.imageUrl != null) ...[
+                    if (imageUrl != null) ...[
                       const SizedBox(height: 16),
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          post.imageUrl!,
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Text(
-                              'Gagal memuat gambar',
-                            );
-                          },
+                        borderRadius: BorderRadius.circular(14),
+                        child: AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: Image.network(
+                            imageUrl,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, progress) {
+                              if (progress == null) return child;
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.image_not_supported,
+                                    size: 48,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ],
-
                     const SizedBox(height: 20),
-
                     Text(
                       post.content,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        height: 1.6,
-                      ),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            height: 1.6,
+                          ),
                     ),
                   ],
                 ),

@@ -2,11 +2,16 @@ import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+
 import '../models/category.dart';
 import '../services/api_service.dart';
 
 class AddPostPage extends StatefulWidget {
-  const AddPostPage({super.key});
+  /// Dipanggil saat berhasil menyimpan dalam mode tab MainShell.
+  /// Jika null, halaman berperilaku sebagai route push dengan pop(true).
+  final VoidCallback? onSaved;
+
+  const AddPostPage({super.key, this.onSaved});
 
   @override
   State<AddPostPage> createState() => _AddPostPageState();
@@ -36,24 +41,18 @@ class _AddPostPageState extends State<AddPostPage> {
   Future<void> loadCategories() async {
     try {
       final data = await apiService.getCategories();
-
       if (!mounted) return;
-
       setState(() {
         categories = data;
         isLoadingCategories = false;
       });
     } catch (e) {
       if (!mounted) return;
-
       setState(() {
         isLoadingCategories = false;
       });
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal mengambil kategori: $e'),
-        ),
+        SnackBar(content: Text('Gagal mengambil kategori: $e')),
       );
     }
   }
@@ -63,21 +62,25 @@ class _AddPostPageState extends State<AddPostPage> {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
       );
-
       if (image == null) return;
-
       setState(() {
         _selectedImage = image;
       });
     } on PlatformException catch (e) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal memilih gambar: ${e.message}'),
-        ),
+        SnackBar(content: Text('Gagal memilih gambar: ${e.message}')),
       );
     }
+  }
+
+  void _resetForm() {
+    titleController.clear();
+    contentController.clear();
+    setState(() {
+      _selectedImage = null;
+      selectedCategoryId = null;
+    });
   }
 
   Future<void> savePost() async {
@@ -85,9 +88,7 @@ class _AddPostPageState extends State<AddPostPage> {
         contentController.text.trim().isEmpty ||
         selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Semua data wajib diisi'),
-        ),
+        const SnackBar(content: Text('Semua data wajib diisi')),
       );
       return;
     }
@@ -106,20 +107,21 @@ class _AddPostPageState extends State<AddPostPage> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Artikel berhasil ditambahkan'),
-        ),
-      );
+      // Mode tab MainShell: reset form + beri tahu shell lewat callback.
+      if (widget.onSaved != null) {
+        _resetForm();
+        widget.onSaved!.call();
+        return;
+      }
 
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Artikel berhasil ditambahkan')),
+      );
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal: $e'),
-        ),
+        SnackBar(content: Text('Gagal: $e')),
       );
     } finally {
       if (mounted) {
@@ -141,20 +143,17 @@ class _AddPostPageState extends State<AddPostPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
+        automaticallyImplyLeading: widget.onSaved == null,
         title: const Text('Tambah Artikel'),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth >= 600;
-
           double horizontalPadding = 16;
-
           if (isDesktop) {
             horizontalPadding = (constraints.maxWidth - 700) / 2;
-
-            if (horizontalPadding < 16) {
-              horizontalPadding = 16;
-            }
+            if (horizontalPadding < 16) horizontalPadding = 16;
           }
 
           return SingleChildScrollView(
@@ -171,9 +170,7 @@ class _AddPostPageState extends State<AddPostPage> {
                     border: OutlineInputBorder(),
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
                 TextField(
                   controller: contentController,
                   maxLines: 6,
@@ -182,9 +179,7 @@ class _AddPostPageState extends State<AddPostPage> {
                     border: OutlineInputBorder(),
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
                 DropdownButtonFormField<int>(
                   initialValue: selectedCategoryId,
                   decoration: const InputDecoration(
@@ -212,40 +207,55 @@ class _AddPostPageState extends State<AddPostPage> {
                           });
                         },
                 ),
-
                 const SizedBox(height: 16),
-
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: OutlinedButton.icon(
                     onPressed: pickImageFromGallery,
-                    icon: const Icon(Icons.image),
-                    label: const Text('Pilih Gambar'),
+                    icon: const Icon(Icons.image_outlined),
+                    label: Text(
+                      _selectedImage == null
+                          ? 'Pilih Gambar'
+                          : 'Ganti Gambar (${_selectedImage!.name})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
-
                 if (_selectedImage != null) ...[
                   const SizedBox(height: 16),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                     child: kIsWeb
                         ? Image.network(
                             _selectedImage!.path,
                             width: double.infinity,
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Padding(
+                                padding: EdgeInsets.all(16),
+                                child: Text('Gagal memuat preview'),
+                              );
+                            },
                           )
                         : FutureBuilder<Uint8List>(
                             future: _selectedImage!.readAsBytes(),
                             builder: (context, snapshot) {
                               if (snapshot.connectionState ==
                                   ConnectionState.waiting) {
-                                return const Center(
-                                  child: CircularProgressIndicator(),
+                                return const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
                                 );
                               }
                               if (snapshot.hasError || !snapshot.hasData) {
-                                return const Text('Gagal memuat preview');
+                                return const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Text('Gagal memuat preview'),
+                                );
                               }
                               return Image.memory(
                                 snapshot.data!,
@@ -256,16 +266,21 @@ class _AddPostPageState extends State<AddPostPage> {
                           ),
                   ),
                 ],
-
                 const SizedBox(height: 24),
-
                 SizedBox(
                   width: double.infinity,
                   height: 50,
-                  child: ElevatedButton(
+                  child: FilledButton(
                     onPressed: isLoading ? null : savePost,
                     child: isLoading
-                        ? const CircularProgressIndicator()
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
                         : const Text('Simpan Artikel'),
                   ),
                 ),

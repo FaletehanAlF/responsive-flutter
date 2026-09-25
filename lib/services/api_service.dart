@@ -138,7 +138,57 @@ class ApiService {
     required String content,
     required int categoryId,
     String? image,
+    XFile? newImage,
   }) async {
+    // Jika pengguna memilih gambar baru, kirim sebagai multipart
+    // agar konsisten dengan AddPostPage. Jika tidak, kirim JSON biasa
+    // dan pertahankan gambar lama.
+    if (newImage != null) {
+      final request = http.MultipartRequest(
+        'PUT',
+        Uri.parse('$baseUrl/posts/$id'),
+      );
+
+      request.fields['title'] = title;
+      request.fields['content'] = content;
+      request.fields['category_id'] = categoryId.toString();
+
+      final bytes = await newImage.readAsBytes();
+      final fileName = newImage.name.toLowerCase();
+
+      late final MediaType contentType;
+      if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+        contentType = MediaType('image', 'jpeg');
+      } else if (fileName.endsWith('.png')) {
+        contentType = MediaType('image', 'png');
+      } else if (fileName.endsWith('.webp')) {
+        contentType = MediaType('image', 'webp');
+      } else {
+        throw Exception(
+          'Format gambar tidak didukung. Hanya jpg, jpeg, png, webp yang diizinkan',
+        );
+      }
+
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'image',
+          bytes,
+          filename: newImage.name,
+          contentType: contentType,
+        ),
+      );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Gagal mengubah artikel: ${response.statusCode} ${response.body}',
+        );
+      }
+      return;
+    }
+
     final response = await http.put(
       Uri.parse('$baseUrl/posts/$id'),
       headers: {'Content-Type': 'application/json'},

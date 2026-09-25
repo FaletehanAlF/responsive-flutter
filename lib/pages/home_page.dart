@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../services/api_service.dart';
-import '../models/post.dart';
 import '../models/category.dart';
+import '../models/post.dart';
+import '../services/api_service.dart';
 import 'detail_page.dart';
-import 'add_post_page.dart';
-import 'category_page.dart';
+import 'notification_page.dart';
+import 'profile_page.dart';
 
+/// Halaman utama NARATA: greeting, filter kategori, daftar artikel terbaru.
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final int refreshSignal;
+
+  const HomePage({super.key, this.refreshSignal = 0});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -17,221 +20,330 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ApiService apiService = ApiService();
 
-  late Future<List<Post>> posts;
-  late Future<List<Category>> categories;
+  late Future<List<Post>> _postsFuture;
+  late Future<List<Category>> _categoriesFuture;
 
-  int? selectedCategoryId;
+  int? _selectedCategoryId;
+  int _lastSignal = 0;
 
   @override
   void initState() {
     super.initState();
-    posts = apiService.getPosts();
-    categories = apiService.getCategories();
+    _lastSignal = widget.refreshSignal;
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(HomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.refreshSignal != _lastSignal) {
+      _lastSignal = widget.refreshSignal;
+      _load();
+    }
+  }
+
+  void _load() {
+    setState(() {
+      _postsFuture = apiService.getPosts();
+      _categoriesFuture = apiService.getCategories();
+    });
+  }
+
+  String _snippet(String content) {
+    final clean = content.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (clean.length <= 100) return clean;
+    return '${clean.substring(0, 100)}…';
+  }
+
+  Future<void> _openDetail(Post post) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => DetailPage(postId: post.id)),
+    );
+    if (!mounted) return;
+    if (result == true) _load();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddPostPage()),
-          );
-          if (!context.mounted) return;
-          if (result == true) {
-            setState(() {
-              posts = apiService.getPosts();
-            });
-          }
-        },
-        child: const Icon(Icons.add),
-      ),
       appBar: AppBar(
-        title: const Text('NARATA'),
+        centerTitle: true,
+        title: const Text(
+          'NARATA',
+          style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 1.2),
+        ),
         actions: [
           IconButton(
-            onPressed: () async {
-              await Navigator.push(
+            tooltip: 'Notifikasi',
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () {
+              Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const CategoryPage()),
+                MaterialPageRoute(
+                  builder: (context) => const NotificationPage(),
+                ),
               );
-              setState(() {
-                posts = apiService.getPosts();
-                categories = apiService.getCategories();
-              });
             },
-            icon: const Icon(Icons.category),
-            tooltip: 'Kategori',
+          ),
+          IconButton(
+            tooltip: 'Profil',
+            icon: const Icon(Icons.person_outline),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfilePage()),
+              );
+            },
           ),
         ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth >= 600;
-
-          double horizontalPadding = 0;
+          double horizontalPadding = 16;
           if (isDesktop) {
             horizontalPadding = (constraints.maxWidth - 700) / 2;
-            if (horizontalPadding < 16) {
-              horizontalPadding = 16;
-            }
+            if (horizontalPadding < 16) horizontalPadding = 16;
           }
 
-          return Padding(
-            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-            child: Column(
-              children: [
-                FutureBuilder<List<Category>>(
-                  future: categories,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Center(child: Text('Memuat kategori...')),
-                      );
-                    }
-
-                    if (snapshot.hasError) {
-                      return const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Center(child: Text('Gagal memuat kategori')),
-                      );
-                    }
-
-                    final data = snapshot.data ?? [];
-
-                    return Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: DropdownButton<int?>(
-                        value: selectedCategoryId,
-                        isExpanded: true,
-                        items: [
-                          const DropdownMenuItem<int?>(
-                            value: null,
-                            child: Text(
-                              'Semua',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          ...data.map((category) {
-                            return DropdownMenuItem<int?>(
-                              value: category.id,
-                              child: Text(
-                                category.name,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          }),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            selectedCategoryId = value;
-                          });
-                        },
-                      ),
-                    );
-                  },
-                ),
-                Expanded(
-                  child: FutureBuilder<List<Post>>(
-                    future: posts,
+          return RefreshIndicator(
+            onRefresh: () async => _load(),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: 16,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Temukan dan kelola artikel',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Baca tulisan terbaru dari NARATA',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  FutureBuilder<List<Category>>(
+                    future: _categoriesFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState ==
                           ConnectionState.waiting) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
+                        return const Text('Memuat kategori...');
+                      }
+                      if (snapshot.hasError) {
+                        return const Text('Gagal memuat kategori');
+                      }
+                      final data = snapshot.data ?? [];
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            ChoiceChip(
+                              label: const Text('Semua'),
+                              selected: _selectedCategoryId == null,
+                              onSelected: (_) {
+                                setState(() => _selectedCategoryId = null);
+                              },
+                            ),
+                            ...data.map(
+                              (category) => Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: ChoiceChip(
+                                  label: Text(category.name),
+                                  selected:
+                                      _selectedCategoryId == category.id,
+                                  onSelected: (_) {
+                                    setState(() {
+                                      _selectedCategoryId = category.id;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Artikel Terbaru',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  FutureBuilder<List<Post>>(
+                    future: _postsFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 48),
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
                         );
                       }
-
                       if (snapshot.hasError) {
-                        return Center(
-                          child: Text('Error: ${snapshot.error}'),
+                        return Padding(
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Text(
+                                    'Gagal memuat artikel: ${snapshot.error}'),
+                                const SizedBox(height: 12),
+                                OutlinedButton(
+                                  onPressed: _load,
+                                  child: const Text('Coba lagi'),
+                                ),
+                              ],
+                            ),
+                          ),
                         );
                       }
 
                       final data = snapshot.data ?? [];
-
-                      final List<Post> filtered;
-                      if (selectedCategoryId == null) {
-                        filtered = data;
-                      } else {
-                        filtered = data
-                            .where(
-                              (post) =>
-                                  post.categoryId == selectedCategoryId,
-                            )
-                            .toList();
-                      }
+                      final filtered = _selectedCategoryId == null
+                          ? data
+                          : data
+                              .where((post) =>
+                                  post.categoryId == _selectedCategoryId)
+                              .toList();
 
                       if (filtered.isEmpty) {
-                        if (selectedCategoryId == null) {
-                          return const Center(
-                            child: Text('Belum ada artikel'),
-                          );
-                        } else {
-                          return const Center(
+                        return Padding(
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 32),
+                          child: Center(
                             child: Text(
-                              'Belum ada artikel pada kategori ini',
+                              _selectedCategoryId == null
+                                  ? 'Belum ada artikel'
+                                  : 'Belum ada artikel pada kategori ini',
                             ),
-                          );
-                        }
+                          ),
+                        );
                       }
 
-                      return ListView.builder(
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
                         itemCount: filtered.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final post = filtered[index];
-
-                          return ListTile(
-                            leading: post.imageUrl != null
-                                ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      post.imageUrl!,
-                                      width: 56,
-                                      height: 56,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return const Icon(
-                                          Icons.broken_image,
-                                        );
-                                      },
+                          final imageUrl = post.imageUrl;
+                          return Card(
+                            clipBehavior: Clip.antiAlias,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            elevation: 1,
+                            child: InkWell(
+                              onTap: () => _openDetail(post),
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  if (imageUrl != null)
+                                    AspectRatio(
+                                      aspectRatio: 16 / 9,
+                                      child: Image.network(
+                                        imageUrl,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                        loadingBuilder:
+                                            (context, child, progress) {
+                                          if (progress == null) {
+                                            return child;
+                                          }
+                                          return const Center(
+                                            child:
+                                                CircularProgressIndicator(),
+                                          );
+                                        },
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          return Container(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                            child: const Center(
+                                              child: Icon(
+                                                Icons.image_not_supported,
+                                                size: 40,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
                                     ),
-                                  )
-                                : const Icon(Icons.image_not_supported),
-                            title: Text(
-                              post.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                                  Padding(
+                                    padding: const EdgeInsets.all(14),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          post.title,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          post.categoryName,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelMedium
+                                              ?.copyWith(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          _snippet(post.content),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            subtitle: Text(
-                              post.categoryName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      DetailPage(postId: post.id),
-                                ),
-                              );
-                              if (!context.mounted) return;
-                              setState(() {
-                                posts = apiService.getPosts();
-                              });
-                            },
                           );
                         },
                       );
                     },
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
