@@ -157,15 +157,14 @@ class _DetailPageState extends State<DetailPage> {
         final date = _date(post.createdAt);
 
         return Scaffold(
-          appBar: AppBar(
-            leading: widget.onClose == null
-                ? null
-                : BackButton(onPressed: () => _close(false)),
+          appBar: NarataAppBar(
             title: Text(
               post.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            showBack: true,
+            onBack: widget.onClose == null ? null : () => _close(false),
           ),
           body: LayoutBuilder(
             builder: (context, constraints) {
