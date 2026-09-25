@@ -46,7 +46,8 @@ class _DetailPageState extends State<DetailPage> {
   }
 
   void _reload() {
-    setState(() => _postFuture = apiService.getPostById(_postId));
+    final next = apiService.getPostById(_postId);
+    setState(() => _postFuture = next);
   }
 
   void _close(bool changed) {
