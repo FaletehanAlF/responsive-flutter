@@ -6,7 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import '../models/category.dart';
 import '../services/api_service.dart';
 
-/// Form tambah artikel: judul, isi, kategori, dan gambar sampul.
+/// Form tambah artikel: gambar sampul di paling atas, lalu
+/// judul, isi, dan kategori.
 class AddPostPage extends StatefulWidget {
   /// Dipanggil saat berhasil menyimpan dalam mode tab MainShell.
   /// Jika null, halaman berperilaku sebagai route push dengan pop(true).
@@ -193,6 +194,9 @@ class _AddPostPageState extends State<AddPostPage> {
                             ),
                       ),
                       const SizedBox(height: 20),
+                      _fieldLabel(context, 'Gambar Sampul'),
+                      _imagePicker(context),
+                      const SizedBox(height: 16),
                       _fieldLabel(context, 'Judul Artikel'),
                       TextField(
                         controller: titleController,
@@ -255,136 +259,6 @@ class _AddPostPageState extends State<AddPostPage> {
                                 });
                               },
                       ),
-                      const SizedBox(height: 16),
-                      _fieldLabel(context, 'Gambar Sampul'),
-                      if (_selectedImage == null)
-                        InkWell(
-                          onTap: pickImageFromGallery,
-                          borderRadius: BorderRadius.circular(16),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 28,
-                              horizontal: 16,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colorScheme.surfaceContainerLow,
-                              border: Border.all(
-                                color: colorScheme.outlineVariant,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: colorScheme.primaryContainer,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.image_outlined,
-                                    size: 28,
-                                    color: colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Pilih gambar',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'JPG, PNG, atau WEBP • Maks 2 MB',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: colorScheme.outline,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      else ...[
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: kIsWeb
-                              ? Image.network(
-                                  _selectedImage!.path,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (context, error, stackTrace) {
-                                    return const Padding(
-                                      padding: EdgeInsets.all(16),
-                                      child:
-                                          Text('Gagal memuat pratinjau'),
-                                    );
-                                  },
-                                )
-                              : FutureBuilder<Uint8List>(
-                                  future:
-                                      _selectedImage!.readAsBytes(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return const Padding(
-                                        padding: EdgeInsets.all(24),
-                                        child: Center(
-                                          child:
-                                              CircularProgressIndicator(),
-                                        ),
-                                      );
-                                    }
-                                    if (snapshot.hasError ||
-                                        !snapshot.hasData) {
-                                      return const Padding(
-                                        padding: EdgeInsets.all(16),
-                                        child: Text(
-                                          'Gagal memuat pratinjau',
-                                        ),
-                                      );
-                                    }
-                                    return Image.memory(
-                                      snapshot.data!,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                    );
-                                  },
-                                ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: pickImageFromGallery,
-                                icon: const Icon(
-                                  Icons.refresh,
-                                  size: 18,
-                                ),
-                                label: const Text('Ganti gambar'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            TextButton.icon(
-                              onPressed: _removeImage,
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                size: 18,
-                              ),
-                              label: const Text('Hapus'),
-                            ),
-                          ],
-                        ),
-                      ],
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
@@ -424,6 +298,139 @@ class _AddPostPageState extends State<AddPostPage> {
               fontWeight: FontWeight.w600,
             ),
       ),
+    );
+  }
+
+  /// Area pilih gambar di paling atas form: tampil sebagai area
+  /// upload visual saat kosong, pratinjau terbatas saat terisi.
+  Widget _imagePicker(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final bool isDesktop = MediaQuery.sizeOf(context).width >= 600;
+
+    if (_selectedImage == null) {
+      return InkWell(
+        onTap: pickImageFromGallery,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(
+            vertical: 28,
+            horizontal: 16,
+          ),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            border: Border.all(
+              color: colorScheme.outlineVariant,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.image_outlined,
+                  size: 28,
+                  color: colorScheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Pilih gambar',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'JPG, PNG, atau WEBP • Maks 2 MB',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.outline,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: isDesktop ? 320 : 260,
+            ),
+            child: kIsWeb
+                ? Image.network(
+                    _selectedImage!.path,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text('Gagal memuat pratinjau'),
+                      );
+                    },
+                  )
+                : FutureBuilder<Uint8List>(
+                    future: _selectedImage!.readAsBytes(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+                      if (snapshot.hasError || !snapshot.hasData) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Text('Gagal memuat pratinjau'),
+                        );
+                      }
+                      return Image.memory(
+                        snapshot.data!,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      );
+                    },
+                  ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: pickImageFromGallery,
+                icon: const Icon(
+                  Icons.refresh,
+                  size: 18,
+                ),
+                label: const Text('Ganti gambar'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            TextButton.icon(
+              onPressed: _removeImage,
+              icon: const Icon(
+                Icons.delete_outline,
+                size: 18,
+              ),
+              label: const Text('Hapus'),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

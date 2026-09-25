@@ -83,6 +83,18 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
+        leading: IconButton(
+          tooltip: 'Notifikasi',
+          icon: const Icon(Icons.notifications_outlined),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const NotificationPage(),
+              ),
+            );
+          },
+        ),
         title: const Text(
           'NARATA',
           style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 1.2),
