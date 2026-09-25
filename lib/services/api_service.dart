@@ -174,9 +174,7 @@ class ApiService {
       query['search'] = search.trim();
     }
 
-    final uri = Uri.parse('$baseUrl/posts')
-        .replace(queryParameters: query.isEmpty ? null : query);
-    final response = await http.get(uri);
+    final response = await _client.get(_uri('/posts', query));
     final data = _decodeList(response, 'Gagal mengambil artikel');
     return data
         .map((item) => Post.fromJson((item as Map).cast<String, dynamic>()))
@@ -184,7 +182,7 @@ class ApiService {
   }
 
   Future<Post> getPostById(int id) async {
-    final response = await http.get(Uri.parse('$baseUrl/posts/$id'));
+    final response = await _client.get(_uri('/posts/$id'));
     final data = _decodeData(response, 'Gagal mengambil detail artikel');
     return Post.fromJson(data);
   }
@@ -195,7 +193,7 @@ class ApiService {
     required int categoryId,
     XFile? image,
   }) async {
-    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl/posts'))
+    final request = http.MultipartRequest('POST', _uri('/posts'))
       ..fields['title'] = title
       ..fields['content'] = content
       ..fields['category_id'] = '$categoryId';
@@ -228,11 +226,10 @@ class ApiService {
     XFile? newImage,
   }) async {
     if (newImage != null) {
-      final request =
-          http.MultipartRequest('PUT', Uri.parse('$baseUrl/posts/$id'))
-            ..fields['title'] = title
-            ..fields['content'] = content
-            ..fields['category_id'] = '$categoryId';
+      final request = http.MultipartRequest('PUT', _uri('/posts/$id'))
+        ..fields['title'] = title
+        ..fields['content'] = content
+        ..fields['category_id'] = '$categoryId';
 
       final prepared = await _prepareImage(newImage);
       final bytes = await prepared.readAsBytes();
@@ -252,8 +249,8 @@ class ApiService {
       return;
     }
 
-    final response = await http.put(
-      Uri.parse('$baseUrl/posts/$id'),
+    final response = await _client.put(
+      _uri('/posts/$id'),
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({
         'title': title,
@@ -269,7 +266,7 @@ class ApiService {
   }
 
   Future<void> deletePost(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/posts/$id'));
+    final response = await _client.delete(_uri('/posts/$id'));
 
     if (response.statusCode != 200) {
       _fail(response, 'Gagal menghapus artikel');
