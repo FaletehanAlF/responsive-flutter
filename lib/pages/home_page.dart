@@ -397,6 +397,42 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  /// Sampul gambar card artikel.
+  /// Desktop dibatasi tingginya (280px) agar proporsional dan tidak
+  /// mendominasi viewport; mobile tetap 16:9 mengikuti lebar layar.
+  /// BoxFit.cover menjaga gambar memenuhi area tanpa distorsi.
+  Widget _cardCover(BuildContext context, String imageUrl) {
+    final bool isDesktop = MediaQuery.sizeOf(context).width >= 600;
+    final image = Image.network(
+      imageUrl,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return const Center(child: CircularProgressIndicator());
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: const Center(
+            child: Icon(Icons.image_not_supported, size: 40),
+          ),
+        );
+      },
+    );
+    if (isDesktop) {
+      return SizedBox(
+        height: 280,
+        width: double.infinity,
+        child: image,
+      );
+    }
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: image,
+    );
+  }
+
   Widget _articleCard(BuildContext context, Post post) {
     final colorScheme = Theme.of(context).colorScheme;
     final imageUrl = post.imageUrl;
@@ -412,32 +448,7 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (imageUrl != null)
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Image.network(
-                  imageUrl,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: colorScheme.surfaceContainerHighest,
-                      child: const Center(
-                        child: Icon(
-                          Icons.image_not_supported,
-                          size: 40,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+            if (imageUrl != null) _cardCover(context, imageUrl),
             Padding(
               padding: const EdgeInsets.all(14),
               child: Column(

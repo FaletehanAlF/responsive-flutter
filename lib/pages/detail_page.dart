@@ -40,6 +40,36 @@ class _DetailPageState extends State<DetailPage> {
     return value;
   }
 
+  /// Gambar utama artikel.
+  /// Desktop dibatasi tingginya (340px, dalam rentang 320-380px) agar tidak
+  /// mendominasi viewport dan judul/konten tetap terlihat; mobile tetap
+  /// 16:9 mengikuti lebar layar. BoxFit.cover tanpa distorsi, radius 16px.
+  Widget _heroImage(BuildContext context, String imageUrl, bool isDesktop) {
+    final image = Image.network(
+      imageUrl,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return const Center(child: CircularProgressIndicator());
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: const Center(
+            child: Icon(Icons.image_not_supported, size: 48),
+          ),
+        );
+      },
+    );
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: isDesktop
+          ? SizedBox(height: 340, width: double.infinity, child: image)
+          : AspectRatio(aspectRatio: 16 / 9, child: image),
+    );
+  }
+
   Future<void> _confirmDelete(Post post) async {
     final colorScheme = Theme.of(context).colorScheme;
     final confirm = await showDialog<bool>(
@@ -240,37 +270,7 @@ class _DetailPageState extends State<DetailPage> {
                           ),
                           if (imageUrl != null) ...[
                             const SizedBox(height: 16),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: AspectRatio(
-                                aspectRatio: 16 / 9,
-                                child: Image.network(
-                                  imageUrl,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  loadingBuilder:
-                                      (context, child, progress) {
-                                    if (progress == null) return child;
-                                    return const Center(
-                                      child: CircularProgressIndicator(),
-                                    );
-                                  },
-                                  errorBuilder:
-                                      (context, error, stackTrace) {
-                                    return Container(
-                                      color: colorScheme
-                                          .surfaceContainerHighest,
-                                      child: const Center(
-                                        child: Icon(
-                                          Icons.image_not_supported,
-                                          size: 48,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
+                            _heroImage(context, imageUrl, isDesktop),
                           ],
                           const SizedBox(height: 20),
                           Text(

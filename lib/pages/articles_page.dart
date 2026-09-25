@@ -331,26 +331,37 @@ class _ArticlesPageState extends State<ArticlesPage> {
     );
   }
 
-  Widget _coverImage(BuildContext context, String imageUrl) {
+  Widget _coverImage(BuildContext context, String imageUrl,
+      {double? maxHeight}) {
+    final image = Image.network(
+      imageUrl,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return const Center(child: CircularProgressIndicator());
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: const Center(
+            child: Icon(Icons.image_not_supported, size: 40),
+          ),
+        );
+      },
+    );
+    // Desktop: batasi tinggi agar gambar tidak mendominasi viewport.
+    // Mobile (maxHeight null): pertahankan 16:9 mengikuti lebar layar.
+    if (maxHeight != null) {
+      return SizedBox(
+        height: maxHeight,
+        width: double.infinity,
+        child: image,
+      );
+    }
     return AspectRatio(
       aspectRatio: 16 / 9,
-      child: Image.network(
-        imageUrl,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return const Center(child: CircularProgressIndicator());
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: const Center(
-              child: Icon(Icons.image_not_supported, size: 40),
-            ),
-          );
-        },
-      ),
+      child: image,
     );
   }
 
@@ -378,13 +389,19 @@ class _ArticlesPageState extends State<ArticlesPage> {
   Widget _listCard(BuildContext context, Post post) {
     final colorScheme = Theme.of(context).colorScheme;
     final imageUrl = post.imageUrl;
+    final bool isDesktop = MediaQuery.sizeOf(context).width >= 600;
     return _cardShell(
       context,
       post,
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (imageUrl != null) _coverImage(context, imageUrl),
+          if (imageUrl != null)
+            _coverImage(
+              context,
+              imageUrl,
+              maxHeight: isDesktop ? 280 : null,
+            ),
           Padding(
             padding: const EdgeInsets.all(14),
             child: Column(
