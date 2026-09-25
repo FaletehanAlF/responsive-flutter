@@ -1,3 +1,5 @@
+import '../services/api_service.dart';
+
 class Post {
   final int id;
   final String title;
@@ -7,7 +9,7 @@ class Post {
   final String categoryName;
   final String createdAt;
 
-  Post({
+  const Post({
     required this.id,
     required this.title,
     required this.content,
@@ -18,30 +20,35 @@ class Post {
   });
 
   factory Post.fromJson(Map<String, dynamic> json) {
-    int parseId(dynamic value) {
-      if (value is int) return value;
-      return int.tryParse('$value') ?? 0;
-    }
-
     return Post(
-      id: parseId(json['id']),
-      title: '${json['title'] ?? ''}',
-      content: '${json['content'] ?? ''}',
+      id: _parseId(json['id']),
+      title: json['title']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
       image: json['image']?.toString(),
-      categoryId: parseId(json['category_id']),
+      categoryId: _parseId(json['category_id']),
       categoryName: json['category_name']?.toString() ?? 'Tanpa Kategori',
       createdAt: json['created_at']?.toString() ?? '',
     );
   }
 
+  static int _parseId(dynamic value) {
+    if (value is int) return value;
+    return int.tryParse('$value') ?? 0;
+  }
+
   String? get imageUrl {
-    if (image == null) return null;
-    final value = image!.trim();
-    if (value.isEmpty) return null;
+    final value = image?.trim();
+    if (value == null || value.isEmpty) return null;
     if (value.startsWith('http://') || value.startsWith('https://')) {
       return value;
     }
     final path = value.startsWith('/') ? value : '/$value';
-    return 'http://localhost:8000$path';
+    return '$kApiBaseUrl$path';
+  }
+
+  String get snippet {
+    final clean = content.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (clean.length <= 110) return clean;
+    return '${clean.substring(0, 110)}…';
   }
 }

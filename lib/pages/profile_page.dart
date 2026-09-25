@@ -43,17 +43,14 @@ class ProfilePage extends StatelessWidget {
                       const SizedBox(height: 16),
                       Text(
                         'Pengguna NARATA',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
+                        style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Pengelola Artikel',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.outline,
-                            ),
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(color: colorScheme.outline),
                       ),
                       const SizedBox(height: 20),
                       Card(
@@ -68,16 +65,11 @@ class ProfilePage extends StatelessWidget {
                               title: Text('Peran'),
                               subtitle: Text('Penulis dan pembaca artikel'),
                             ),
-                            Divider(
-                              height: 1,
-                              indent: 16,
-                              endIndent: 16,
-                            ),
+                            Divider(height: 1, indent: 16, endIndent: 16),
                             ListTile(
                               leading: Icon(Icons.devices_outlined),
                               title: Text('Perangkat'),
-                              subtitle:
-                                  Text('Data tersimpan di server lokal'),
+                              subtitle: Text('Data tersimpan di server lokal'),
                             ),
                           ],
                         ),

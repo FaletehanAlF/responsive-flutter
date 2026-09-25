@@ -57,17 +57,15 @@ class _EditPostPageState extends State<EditPostPage> {
       setState(() {
         isLoadingCategories = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengambil kategori: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal mengambil kategori: $e')));
     }
   }
 
   Future<void> pickImageFromGallery() async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-      );
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image == null) return;
       setState(() {
         _newImage = image;
@@ -94,12 +92,11 @@ class _EditPostPageState extends State<EditPostPage> {
       contentError = contentController.text.trim().isEmpty
           ? 'Isi artikel wajib diisi'
           : null;
-      categoryError =
-          selectedCategoryId == null ? 'Pilih salah satu kategori' : null;
+      categoryError = selectedCategoryId == null
+          ? 'Pilih salah satu kategori'
+          : null;
     });
-    return titleError == null &&
-        contentError == null &&
-        categoryError == null;
+    return titleError == null && contentError == null && categoryError == null;
   }
 
   Future<void> updatePost() async {
@@ -121,15 +118,14 @@ class _EditPostPageState extends State<EditPostPage> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Artikel berhasil diubah')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Artikel berhasil diubah')));
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengubah artikel: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Gagal mengubah artikel: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -152,10 +148,7 @@ class _EditPostPageState extends State<EditPostPage> {
     final oldImageUrl = widget.post.imageUrl;
 
     return Scaffold(
-      appBar: const NarataAppBar(
-        title: Text('Edit Artikel'),
-        showBack: true,
-      ),
+      appBar: const NarataAppBar(title: Text('Edit Artikel'), showBack: true),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth >= 600;
@@ -172,9 +165,8 @@ class _EditPostPageState extends State<EditPostPage> {
                     children: [
                       Text(
                         'Perbarui informasi artikel.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.outline,
-                            ),
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(color: colorScheme.outline),
                       ),
                       const SizedBox(height: 20),
                       _fieldLabel(context, 'Judul Artikel'),
@@ -244,10 +236,8 @@ class _EditPostPageState extends State<EditPostPage> {
                       if (oldImageUrl != null && _newImage == null) ...[
                         Text(
                           'Gambar saat ini',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.outline,
-                                  ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: colorScheme.outline),
                         ),
                         const SizedBox(height: 8),
                         ClipRRect(
@@ -290,12 +280,10 @@ class _EditPostPageState extends State<EditPostPage> {
                                   _newImage!.path,
                                   width: double.infinity,
                                   fit: BoxFit.cover,
-                                  errorBuilder:
-                                      (context, error, stackTrace) {
+                                  errorBuilder: (context, error, stackTrace) {
                                     return const Padding(
                                       padding: EdgeInsets.all(16),
-                                      child:
-                                          Text('Gagal memuat pratinjau'),
+                                      child: Text('Gagal memuat pratinjau'),
                                     );
                                   },
                                 )
@@ -307,8 +295,7 @@ class _EditPostPageState extends State<EditPostPage> {
                                       return const Padding(
                                         padding: EdgeInsets.all(24),
                                         child: Center(
-                                          child:
-                                              CircularProgressIndicator(),
+                                          child: CircularProgressIndicator(),
                                         ),
                                       );
                                     }
@@ -316,9 +303,7 @@ class _EditPostPageState extends State<EditPostPage> {
                                         !snapshot.hasData) {
                                       return const Padding(
                                         padding: EdgeInsets.all(16),
-                                        child: Text(
-                                          'Gagal memuat pratinjau',
-                                        ),
+                                        child: Text('Gagal memuat pratinjau'),
                                       );
                                     }
                                     return Image.memory(
@@ -333,10 +318,7 @@ class _EditPostPageState extends State<EditPostPage> {
                           alignment: Alignment.centerRight,
                           child: TextButton.icon(
                             onPressed: _removeNewImage,
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              size: 18,
-                            ),
+                            icon: const Icon(Icons.delete_outline, size: 18),
                             label: const Text('Batalkan gambar baru'),
                           ),
                         ),
@@ -376,9 +358,8 @@ class _EditPostPageState extends State<EditPostPage> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+        style: Theme.of(context).textTheme.labelLarge
+            ?.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }

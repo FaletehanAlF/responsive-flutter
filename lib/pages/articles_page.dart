@@ -111,7 +111,9 @@ class _ArticlesPageState extends State<ArticlesPage> {
         builder: (context, constraints) {
           final bool wideGrid = constraints.maxWidth >= 1100;
           final bool isDesktop = constraints.maxWidth >= 600;
-          final double cap = wideGrid ? 1100 : (isDesktop ? 760 : double.infinity);
+          final double cap = wideGrid
+              ? 1100
+              : (isDesktop ? 760 : double.infinity);
           return RefreshIndicator(
             onRefresh: () async => _load(),
             child: SingleChildScrollView(
@@ -127,18 +129,14 @@ class _ArticlesPageState extends State<ArticlesPage> {
                       children: [
                         Text(
                           'Semua Artikel',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
+                          style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Kelola seluruh artikel yang tersimpan.',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: colorScheme.outline,
-                                  ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: colorScheme.outline),
                         ),
                         const SizedBox(height: 16),
                         TextField(
@@ -184,8 +182,8 @@ class _ArticlesPageState extends State<ArticlesPage> {
                                       padding: const EdgeInsets.only(left: 8),
                                       child: ChoiceChip(
                                         label: Text(category.name),
-                                        selected: _selectedCategoryId ==
-                                            category.id,
+                                        selected:
+                                            _selectedCategoryId == category.id,
                                         onSelected: (_) {
                                           setState(() {
                                             _selectedCategoryId = category.id;
@@ -247,8 +245,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
                               );
                             }
 
-                            final filtered =
-                                _applyFilter(snapshot.data ?? []);
+                            final filtered = _applyFilter(snapshot.data ?? []);
                             if (filtered.isEmpty) {
                               return _emptyState(context);
                             }
@@ -257,41 +254,36 @@ class _ArticlesPageState extends State<ArticlesPage> {
                             if (wideGrid) {
                               content = GridView.builder(
                                 shrinkWrap: true,
-                                physics:
-                                    const NeverScrollableScrollPhysics(),
+                                physics: const NeverScrollableScrollPhysics(),
                                 itemCount: filtered.length,
                                 gridDelegate:
                                     const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 12,
-                                  mainAxisSpacing: 12,
-                                  childAspectRatio: 1.05,
-                                ),
+                                      crossAxisCount: 2,
+                                      crossAxisSpacing: 12,
+                                      mainAxisSpacing: 12,
+                                      childAspectRatio: 1.05,
+                                    ),
                                 itemBuilder: (context, index) =>
                                     _gridCard(context, filtered[index]),
                               );
                             } else {
                               content = ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: filtered.length,
-                              separatorBuilder: (context, index) =>
-                                  const SizedBox(height: 12),
-                              itemBuilder: (context, index) =>
-                                  _listCard(context, filtered[index]),
-                            );
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: filtered.length,
+                                separatorBuilder: (context, index) =>
+                                    const SizedBox(height: 12),
+                                itemBuilder: (context, index) =>
+                                    _listCard(context, filtered[index]),
+                              );
                             }
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   '${filtered.length} artikel ditemukan',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: colorScheme.outline,
-                                      ),
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(color: colorScheme.outline),
                                 ),
                                 const SizedBox(height: 8),
                                 content,
@@ -315,18 +307,16 @@ class _ArticlesPageState extends State<ArticlesPage> {
     return Card(
       clipBehavior: Clip.antiAlias,
       elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: InkWell(
-        onTap: () => _openDetail(post),
-        child: child,
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: InkWell(onTap: () => _openDetail(post), child: child),
     );
   }
 
-  Widget _coverImage(BuildContext context, String imageUrl,
-      {double? maxHeight}) {
+  Widget _coverImage(
+    BuildContext context,
+    String imageUrl, {
+    double? maxHeight,
+  }) {
     final image = Image.network(
       imageUrl,
       width: double.infinity,
@@ -338,23 +328,14 @@ class _ArticlesPageState extends State<ArticlesPage> {
       errorBuilder: (context, error, stackTrace) {
         return Container(
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: const Center(
-            child: Icon(Icons.image_not_supported, size: 40),
-          ),
+          child: const Center(child: Icon(Icons.image_not_supported, size: 40)),
         );
       },
     );
     if (maxHeight != null) {
-      return SizedBox(
-        height: maxHeight,
-        width: double.infinity,
-        child: image,
-      );
+      return SizedBox(height: maxHeight, width: double.infinity, child: image);
     }
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: image,
-    );
+    return AspectRatio(aspectRatio: 16 / 9, child: image);
   }
 
   Widget _metaRow(BuildContext context, Post post) {
@@ -367,9 +348,8 @@ class _ArticlesPageState extends State<ArticlesPage> {
           const SizedBox(width: 4),
           Text(
             date,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.outline,
-                ),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: colorScheme.outline),
           ),
         ],
         const Spacer(),
@@ -389,11 +369,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (imageUrl != null)
-            _coverImage(
-              context,
-              imageUrl,
-              maxHeight: isDesktop ? 280 : null,
-            ),
+            _coverImage(context, imageUrl, maxHeight: isDesktop ? 280 : null),
           Padding(
             padding: const EdgeInsets.all(14),
             child: Column(
@@ -405,9 +381,8 @@ class _ArticlesPageState extends State<ArticlesPage> {
                   post.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -448,9 +423,8 @@ class _ArticlesPageState extends State<ArticlesPage> {
                     post.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -493,9 +467,8 @@ class _ArticlesPageState extends State<ArticlesPage> {
             const SizedBox(height: 16),
             Text(
               searching ? 'Artikel tidak ditemukan' : 'Belum ada artikel',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
             Text(
@@ -503,9 +476,8 @@ class _ArticlesPageState extends State<ArticlesPage> {
                   ? 'Ubah kata kunci atau filter kategori.'
                   : 'Tambahkan artikel pertama untuk mulai mengisi NARATA.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.outline,
-                  ),
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: colorScheme.outline),
             ),
           ],
         ),

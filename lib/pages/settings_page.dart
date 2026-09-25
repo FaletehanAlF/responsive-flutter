@@ -39,9 +39,8 @@ class SettingsPage extends StatelessWidget {
   Widget _sectionTitle(BuildContext context, String text) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+      style: Theme.of(context).textTheme.titleMedium
+          ?.copyWith(fontWeight: FontWeight.w600),
     );
   }
 
@@ -68,17 +67,14 @@ class SettingsPage extends StatelessWidget {
                   children: [
                     Text(
                       'Pengaturan',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
+                      style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Kelola pengaturan dan informasi aplikasi.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.outline,
-                          ),
+                      style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(color: colorScheme.outline),
                     ),
                     const SizedBox(height: 20),
                     _sectionTitle(context, 'NARATA'),
@@ -88,9 +84,7 @@ class SettingsPage extends StatelessWidget {
                       color: colorScheme.surfaceContainerLow,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(
-                          color: colorScheme.outlineVariant,
-                        ),
+                        side: BorderSide(color: colorScheme.outlineVariant),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(20),
@@ -111,8 +105,7 @@ class SettingsPage extends StatelessWidget {
                             const SizedBox(width: 16),
                             const Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     'NARATA',
@@ -144,9 +137,7 @@ class SettingsPage extends StatelessWidget {
                       child: Column(
                         children: [
                           ListTile(
-                            leading: const Icon(
-                              Icons.category_outlined,
-                            ),
+                            leading: const Icon(Icons.category_outlined),
                             title: const Text('Kelola Kategori'),
                             subtitle: const Text(
                               'Tambah, edit, dan hapus kategori artikel.',
@@ -156,20 +147,17 @@ class SettingsPage extends StatelessWidget {
                               await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) =>
-                                      const CategoryPage(),
+                                  builder: (context) => const CategoryPage(),
                                 ),
                               );
                               onDataChanged?.call();
                             },
                           ),
-                          const Divider(
-                              height: 1, indent: 16, endIndent: 16),
+                          const Divider(height: 1, indent: 16, endIndent: 16),
                           ListTile(
                             leading: const Icon(Icons.info_outline),
                             title: const Text('Tentang NARATA'),
-                            subtitle:
-                                const Text('Informasi aplikasi.'),
+                            subtitle: const Text('Informasi aplikasi.'),
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () => _showAbout(context),
                           ),
@@ -184,9 +172,7 @@ class SettingsPage extends StatelessWidget {
                       color: colorScheme.surfaceContainerLow,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
-                        side: BorderSide(
-                          color: colorScheme.outlineVariant,
-                        ),
+                        side: BorderSide(color: colorScheme.outlineVariant),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
@@ -197,16 +183,11 @@ class SettingsPage extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                const Expanded(
-                                    child: Text('Version')),
+                                const Expanded(child: Text('Version')),
                                 Text(
                                   '1.0.0',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -216,12 +197,8 @@ class SettingsPage extends StatelessWidget {
                                 const Expanded(child: Text('Sistem')),
                                 Text(
                                   'Blog Management System',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),

@@ -41,17 +41,15 @@ class NotificationPage extends StatelessWidget {
                     const SizedBox(height: 16),
                     Text(
                       'Belum ada notifikasi',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                      style: Theme.of(context).textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       'Notifikasi baru akan muncul di sini.',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.outline,
-                          ),
+                      style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(color: colorScheme.outline),
                     ),
                   ],
                 ),

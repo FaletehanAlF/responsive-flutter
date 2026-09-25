@@ -53,9 +53,7 @@ class _DetailPageState extends State<DetailPage> {
   Future<void> _openEdit(Post post) async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => EditPostPage(post: post),
-      ),
+      MaterialPageRoute(builder: (context) => EditPostPage(post: post)),
     );
     if (result == true && mounted) _reload();
   }
@@ -67,9 +65,7 @@ class _DetailPageState extends State<DetailPage> {
       builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Hapus artikel?'),
-          content: const Text(
-            'Artikel yang dihapus tidak dapat dikembalikan.',
-          ),
+          content: const Text('Artikel yang dihapus tidak dapat dikembalikan.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
@@ -93,15 +89,14 @@ class _DetailPageState extends State<DetailPage> {
     try {
       await apiService.deletePost(post.id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Artikel berhasil dihapus')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Artikel berhasil dihapus')));
       _close(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menghapus artikel: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Gagal menghapus artikel: $e')));
     }
   }
 
@@ -178,8 +173,7 @@ class _DetailPageState extends State<DetailPage> {
                       maxWidth: desktop ? 760 : double.infinity,
                     ),
                     child: Padding(
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -192,18 +186,16 @@ class _DetailPageState extends State<DetailPage> {
                                   imageUrl,
                                   width: double.infinity,
                                   fit: BoxFit.cover,
-                                  loadingBuilder:
-                                      (context, child, progress) {
+                                  loadingBuilder: (context, child, progress) {
                                     if (progress == null) return child;
                                     return const Center(
                                       child: CircularProgressIndicator(),
                                     );
                                   },
-                                  errorBuilder:
-                                      (context, error, stackTrace) {
+                                  errorBuilder: (context, error, stackTrace) {
                                     return Container(
-                                      color: colorScheme
-                                          .surfaceContainerHighest,
+                                      color:
+                                          colorScheme.surfaceContainerHighest,
                                       child: const Center(
                                         child: Icon(
                                           Icons.image_not_supported,
@@ -218,27 +210,17 @@ class _DetailPageState extends State<DetailPage> {
                           const SizedBox(height: 16),
                           Row(
                             children: [
-                              CategoryBadge(
-                                label: post.categoryName,
-                              ),
+                              CategoryBadge(label: post.categoryName),
                               if (date.isNotEmpty) ...[
                                 Text(
                                   ' • ',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.copyWith(
-                                        color: colorScheme.outline,
-                                      ),
+                                  style: Theme.of(context).textTheme.labelMedium
+                                      ?.copyWith(color: colorScheme.outline),
                                 ),
                                 Text(
                                   date,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.copyWith(
-                                        color: colorScheme.outline,
-                                      ),
+                                  style: Theme.of(context).textTheme.labelMedium
+                                      ?.copyWith(color: colorScheme.outline),
                                 ),
                               ],
                             ],
@@ -246,9 +228,7 @@ class _DetailPageState extends State<DetailPage> {
                           const SizedBox(height: 8),
                           Text(
                             post.title,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall
+                            style: Theme.of(context).textTheme.headlineSmall
                                 ?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   height: 1.25,
@@ -257,9 +237,7 @@ class _DetailPageState extends State<DetailPage> {
                           const SizedBox(height: 16),
                           Text(
                             post.content,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyLarge
+                            style: Theme.of(context).textTheme.bodyLarge
                                 ?.copyWith(height: 1.7),
                           ),
                           const SizedBox(height: 24),
@@ -278,8 +256,7 @@ class _DetailPageState extends State<DetailPage> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: OutlinedButton.icon(
-                                  onPressed: () =>
-                                      _confirmDelete(post),
+                                  onPressed: () => _confirmDelete(post),
                                   icon: const Icon(
                                     Icons.delete_outline,
                                     size: 18,

@@ -16,8 +16,7 @@ class _CategoryPageState extends State<CategoryPage> {
   final ApiService apiService = ApiService();
   final TextEditingController nameController = TextEditingController();
 
-  late Future<({List<Category> categories, Map<int, int> counts})>
-      _dataFuture;
+  late Future<({List<Category> categories, Map<int, int> counts})> _dataFuture;
 
   @override
   void initState() {
@@ -66,9 +65,9 @@ class _CategoryPageState extends State<CategoryPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menambahkan kategori: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal menambahkan kategori: $e')));
     }
   }
 
@@ -241,137 +240,134 @@ class _CategoryPageState extends State<CategoryPage> {
                   children: [
                     Text(
                       'Kategori',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
+                      style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Kelola kategori artikel.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.outline,
-                          ),
+                      style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(color: colorScheme.outline),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
-                      child: FutureBuilder<
-                          ({
-                            List<Category> categories,
-                            Map<int, int> counts
-                          })>(
-                        future: _dataFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
-                          if (snapshot.hasError) {
-                            return Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.cloud_off_outlined,
-                                    size: 48,
-                                    color: colorScheme.outline,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text('Error: ${snapshot.error}'),
-                                  const SizedBox(height: 12),
-                                  OutlinedButton.icon(
-                                    onPressed: _load,
-                                    icon: const Icon(Icons.refresh),
-                                    label: const Text('Coba lagi'),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-                          final data = snapshot.data?.categories ?? [];
-                          final counts = snapshot.data?.counts ?? {};
-                          if (data.isEmpty) {
-                            return const Center(
-                              child: Text('Belum ada kategori'),
-                            );
-                          }
-
-                          return ListView.separated(
-                            itemCount: data.length,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final category = data[index];
-                              final count = counts[category.id] ?? 0;
-                              return Card(
-                                elevation: 0,
-                                color: colorScheme.surfaceContainerLow,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(
-                                    color: colorScheme.outlineVariant,
-                                  ),
-                                ),
-                                child: ListTile(
-                                  leading: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          colorScheme.primaryContainer,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      Icons.folder_outlined,
-                                      size: 20,
-                                      color: colorScheme.onPrimaryContainer,
-                                    ),
-                                  ),
-                                  title: Text(
-                                    category.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    '$count artikel',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          color: colorScheme.outline,
-                                        ),
-                                  ),
-                                  trailing: Row(
+                      child:
+                          FutureBuilder<
+                            ({List<Category> categories, Map<int, int> counts})
+                          >(
+                            future: _dataFuture,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              }
+                              if (snapshot.hasError) {
+                                return Center(
+                                  child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      IconButton(
-                                        tooltip: 'Ubah',
-                                        onPressed: () =>
-                                            editCategory(category),
-                                        icon: const Icon(
-                                          Icons.edit_outlined,
-                                        ),
+                                      Icon(
+                                        Icons.cloud_off_outlined,
+                                        size: 48,
+                                        color: colorScheme.outline,
                                       ),
-                                      IconButton(
-                                        tooltip: 'Hapus',
-                                        onPressed: () =>
-                                            deleteCategory(category),
-                                        icon: const Icon(
-                                          Icons.delete_outline,
-                                        ),
+                                      const SizedBox(height: 12),
+                                      Text('Error: ${snapshot.error}'),
+                                      const SizedBox(height: 12),
+                                      OutlinedButton.icon(
+                                        onPressed: _load,
+                                        icon: const Icon(Icons.refresh),
+                                        label: const Text('Coba lagi'),
                                       ),
                                     ],
                                   ),
-                                ),
+                                );
+                              }
+                              final data = snapshot.data?.categories ?? [];
+                              final counts = snapshot.data?.counts ?? {};
+                              if (data.isEmpty) {
+                                return const Center(
+                                  child: Text('Belum ada kategori'),
+                                );
+                              }
+
+                              return ListView.separated(
+                                itemCount: data.length,
+                                separatorBuilder: (context, index) =>
+                                    const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final category = data[index];
+                                  final count = counts[category.id] ?? 0;
+                                  return Card(
+                                    elevation: 0,
+                                    color: colorScheme.surfaceContainerLow,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      side: BorderSide(
+                                        color: colorScheme.outlineVariant,
+                                      ),
+                                    ),
+                                    child: ListTile(
+                                      leading: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: colorScheme.primaryContainer,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.folder_outlined,
+                                          size: 20,
+                                          color: colorScheme.onPrimaryContainer,
+                                        ),
+                                      ),
+                                      title: Text(
+                                        category.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        '$count artikel',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: colorScheme.outline,
+                                            ),
+                                      ),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            tooltip: 'Ubah',
+                                            onPressed: () =>
+                                                editCategory(category),
+                                            icon: const Icon(
+                                              Icons.edit_outlined,
+                                            ),
+                                          ),
+                                          IconButton(
+                                            tooltip: 'Hapus',
+                                            onPressed: () =>
+                                                deleteCategory(category),
+                                            icon: const Icon(
+                                              Icons.delete_outline,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
                               );
                             },
-                          );
-                        },
-                      ),
+                          ),
                     ),
                   ],
                 ),

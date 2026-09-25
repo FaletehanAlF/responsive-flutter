@@ -61,14 +61,8 @@ class _MainShellState extends State<MainShell> {
     return IndexedStack(
       index: _index,
       children: [
-        HomePage(
-          refreshSignal: _dataVersion,
-          onOpenDetail: _openDetail,
-        ),
-        ArticlesPage(
-          refreshSignal: _dataVersion,
-          onOpenDetail: _openDetail,
-        ),
+        HomePage(refreshSignal: _dataVersion, onOpenDetail: _openDetail),
+        ArticlesPage(refreshSignal: _dataVersion, onOpenDetail: _openDetail),
         AddPostPage(onSaved: _handleAddSaved),
         SettingsPage(onDataChanged: _notifyDataChanged),
       ],
@@ -78,10 +72,7 @@ class _MainShellState extends State<MainShell> {
   Widget _buildBody() {
     final detailId = _detailPostId;
     if (detailId != null) {
-      return DetailPage(
-        postId: detailId,
-        onClose: _closeDetail,
-      );
+      return DetailPage(postId: detailId, onClose: _closeDetail);
     }
     return _buildStack();
   }
@@ -173,10 +164,7 @@ class _MainShellState extends State<MainShell> {
                   const SizedBox(height: 4),
                   Text(
                     'Blog Management',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.outline,
-                    ),
+                    style: TextStyle(fontSize: 12, color: colorScheme.outline),
                   ),
                 ],
               ),
@@ -191,18 +179,12 @@ class _MainShellState extends State<MainShell> {
                   const SizedBox(height: 8),
                   Text(
                     'Blog Management',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.outline,
-                    ),
+                    style: TextStyle(fontSize: 12, color: colorScheme.outline),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'v1.0.0',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.outline,
-                    ),
+                    style: TextStyle(fontSize: 12, color: colorScheme.outline),
                   ),
                 ],
               ),

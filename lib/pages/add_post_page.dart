@@ -54,17 +54,15 @@ class _AddPostPageState extends State<AddPostPage> {
       setState(() {
         isLoadingCategories = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengambil kategori: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal mengambil kategori: $e')));
     }
   }
 
   Future<void> pickImageFromGallery() async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-      );
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image == null) return;
       setState(() {
         _selectedImage = image;
@@ -91,12 +89,11 @@ class _AddPostPageState extends State<AddPostPage> {
       contentError = contentController.text.trim().isEmpty
           ? 'Isi artikel wajib diisi'
           : null;
-      categoryError =
-          selectedCategoryId == null ? 'Pilih salah satu kategori' : null;
+      categoryError = selectedCategoryId == null
+          ? 'Pilih salah satu kategori'
+          : null;
     });
-    return titleError == null &&
-        contentError == null &&
-        categoryError == null;
+    return titleError == null && contentError == null && categoryError == null;
   }
 
   void _resetForm() {
@@ -141,9 +138,8 @@ class _AddPostPageState extends State<AddPostPage> {
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Gagal: $e')));
     } finally {
       if (mounted) {
         setState(() {
@@ -184,9 +180,8 @@ class _AddPostPageState extends State<AddPostPage> {
                     children: [
                       Text(
                         'Publikasikan artikel baru.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.outline,
-                            ),
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(color: colorScheme.outline),
                       ),
                       const SizedBox(height: 20),
                       _fieldLabel(context, 'Gambar Sampul'),
@@ -289,9 +284,8 @@ class _AddPostPageState extends State<AddPostPage> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+        style: Theme.of(context).textTheme.labelLarge
+            ?.copyWith(fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -306,15 +300,10 @@ class _AddPostPageState extends State<AddPostPage> {
         borderRadius: BorderRadius.circular(16),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(
-            vertical: 28,
-            horizontal: 16,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
           decoration: BoxDecoration(
             color: colorScheme.surfaceContainerLow,
-            border: Border.all(
-              color: colorScheme.outlineVariant,
-            ),
+            border: Border.all(color: colorScheme.outlineVariant),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -334,16 +323,14 @@ class _AddPostPageState extends State<AddPostPage> {
               const SizedBox(height: 12),
               Text(
                 'Pilih gambar',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 4),
               Text(
                 'JPG, PNG, atau WEBP • Maks 2 MB',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.outline,
-                    ),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: colorScheme.outline),
               ),
             ],
           ),
@@ -357,9 +344,7 @@ class _AddPostPageState extends State<AddPostPage> {
         ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: isDesktop ? 320 : 260,
-            ),
+            constraints: BoxConstraints(maxHeight: isDesktop ? 320 : 260),
             child: kIsWeb
                 ? Image.network(
                     _selectedImage!.path,
@@ -375,13 +360,10 @@ class _AddPostPageState extends State<AddPostPage> {
                 : FutureBuilder<Uint8List>(
                     future: _selectedImage!.readAsBytes(),
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Padding(
                           padding: EdgeInsets.all(24),
-                          child: Center(
-                            child: CircularProgressIndicator(),
-                          ),
+                          child: Center(child: CircularProgressIndicator()),
                         );
                       }
                       if (snapshot.hasError || !snapshot.hasData) {
@@ -405,20 +387,14 @@ class _AddPostPageState extends State<AddPostPage> {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: pickImageFromGallery,
-                icon: const Icon(
-                  Icons.refresh,
-                  size: 18,
-                ),
+                icon: const Icon(Icons.refresh, size: 18),
                 label: const Text('Ganti gambar'),
               ),
             ),
             const SizedBox(width: 8),
             TextButton.icon(
               onPressed: _removeImage,
-              icon: const Icon(
-                Icons.delete_outline,
-                size: 18,
-              ),
+              icon: const Icon(Icons.delete_outline, size: 18),
               label: const Text('Hapus'),
             ),
           ],

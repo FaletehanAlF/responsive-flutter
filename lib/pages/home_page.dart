@@ -103,17 +103,14 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Text(
                         'Selamat datang di NARATA',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
+                        style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Baca dan kelola artikel terbaru.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.outline,
-                            ),
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(color: colorScheme.outline),
                       ),
                       const SizedBox(height: 16),
                       FutureBuilder<List<Category>>(
@@ -123,9 +120,7 @@ class _HomePageState extends State<HomePage> {
                               ConnectionState.waiting) {
                             return Text(
                               'Memuat kategori…',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
+                              style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(color: colorScheme.outline),
                             );
                           }
@@ -146,11 +141,10 @@ class _HomePageState extends State<HomePage> {
                                     padding: const EdgeInsets.only(left: 8),
                                     child: ChoiceChip(
                                       label: Text(category.name),
-                                      selected: _selectedCategoryId ==
-                                          category.id,
+                                      selected:
+                                          _selectedCategoryId == category.id,
                                       onSelected: (_) => setState(
-                                        () => _selectedCategoryId =
-                                            category.id,
+                                        () => _selectedCategoryId = category.id,
                                       ),
                                     ),
                                   ),
@@ -163,11 +157,10 @@ class _HomePageState extends State<HomePage> {
                       const SizedBox(height: 20),
                       Text(
                         'Artikel Terbaru',
-                        style:
-                            Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 19,
-                                ),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 19,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       FutureBuilder<List<Post>>(
@@ -177,15 +170,12 @@ class _HomePageState extends State<HomePage> {
                               ConnectionState.waiting) {
                             return const Padding(
                               padding: EdgeInsets.symmetric(vertical: 64),
-                              child: Center(
-                                child: CircularProgressIndicator(),
-                              ),
+                              child: Center(child: CircularProgressIndicator()),
                             );
                           }
                           if (snapshot.hasError) {
                             return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 48),
+                              padding: const EdgeInsets.symmetric(vertical: 48),
                               child: Center(
                                 child: Column(
                                   children: [
@@ -212,16 +202,15 @@ class _HomePageState extends State<HomePage> {
                           final posts = _selectedCategoryId == null
                               ? data
                               : data
-                                  .where(
-                                    (post) =>
-                                        post.categoryId ==
-                                        _selectedCategoryId,
-                                  )
-                                  .toList();
+                                    .where(
+                                      (post) =>
+                                          post.categoryId ==
+                                          _selectedCategoryId,
+                                    )
+                                    .toList();
                           if (posts.isEmpty) {
                             return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 48),
+                              padding: const EdgeInsets.symmetric(vertical: 48),
                               child: Center(
                                 child: Column(
                                   children: [
@@ -258,16 +247,15 @@ class _HomePageState extends State<HomePage> {
                           if (grid) {
                             return GridView.builder(
                               shrinkWrap: true,
-                              physics:
-                                  const NeverScrollableScrollPhysics(),
+                              physics: const NeverScrollableScrollPhysics(),
                               itemCount: posts.length,
                               gridDelegate:
                                   const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                                childAspectRatio: 1.1,
-                              ),
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 16,
+                                    mainAxisSpacing: 16,
+                                    childAspectRatio: 1.1,
+                                  ),
                               itemBuilder: (context, index) =>
                                   _card(context, posts[index], null),
                             );
@@ -331,9 +319,7 @@ class _HomePageState extends State<HomePage> {
     return Card(
       clipBehavior: Clip.antiAlias,
       elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: InkWell(
         onTap: () => _openDetail(post),
         child: Column(
@@ -351,9 +337,8 @@ class _HomePageState extends State<HomePage> {
                     post.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -367,10 +352,8 @@ class _HomePageState extends State<HomePage> {
                       if (date.isNotEmpty)
                         Text(
                           date,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.outline,
-                                  ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: colorScheme.outline),
                         ),
                       const Spacer(),
                       Icon(
