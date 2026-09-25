@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/category.dart';
 import '../services/api_service.dart';
 
@@ -14,6 +17,9 @@ class _AddPostPageState extends State<AddPostPage> {
   final contentController = TextEditingController();
 
   final ApiService apiService = ApiService();
+  final ImagePicker _picker = ImagePicker();
+
+  XFile? _selectedImage;
 
   List<Category> categories = [];
   int? selectedCategoryId;
@@ -50,6 +56,18 @@ class _AddPostPageState extends State<AddPostPage> {
         ),
       );
     }
+  }
+
+  Future<void> pickImageFromGallery() async {
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (image == null) return;
+
+    setState(() {
+      _selectedImage = image;
+    });
   }
 
   Future<void> savePost() async {
@@ -183,6 +201,30 @@ class _AddPostPageState extends State<AddPostPage> {
                           });
                         },
                 ),
+
+                const SizedBox(height: 16),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton.icon(
+                    onPressed: pickImageFromGallery,
+                    icon: const Icon(Icons.image),
+                    label: const Text('Pilih Gambar'),
+                  ),
+                ),
+
+                if (_selectedImage != null) ...[
+                  const SizedBox(height: 16),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(
+                      File(_selectedImage!.path),
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ],
 
                 const SizedBox(height: 24),
 
