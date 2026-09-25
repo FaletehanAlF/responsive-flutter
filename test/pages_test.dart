@@ -559,7 +559,8 @@ void main() {
             200,
           );
         }
-        if (request.url.path == '/categories' && request.method == 'DELETE') {
+        if (request.url.path.startsWith('/categories/') &&
+            request.method == 'DELETE') {
           return http.Response(
             jsonEncode({
               'success': false,
