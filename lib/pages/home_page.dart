@@ -322,33 +322,30 @@ class _HomePageState extends State<HomePage> {
     final imageUrl = post.imageUrl;
     final date = _date(post.createdAt);
 
-    Widget? cover;
-    if (imageUrl != null) {
-      cover = AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Image.network(
-          imageUrl,
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, progress) {
-            if (progress == null) return child;
-            return const Center(child: CircularProgressIndicator());
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: colorScheme.surfaceContainerHighest,
-              child: const Center(
-                child: Icon(Icons.image_not_supported, size: 40),
-              ),
-            );
-          },
-        ),
+    Widget cover = AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Image.network(
+        imageUrl ?? '',
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: colorScheme.surfaceContainerHighest,
+            child: const Center(
+              child: Icon(Icons.image_not_supported, size: 40),
+            ),
+          );
+        },
+      ),
+    );
+    if (maxImageHeight != null) {
+      cover = ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxImageHeight),
+        child: cover,
       );
-      if (maxImageHeight != null) {
-        cover = ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: maxImageHeight),
-          child: cover,
-        );
-      }
     }
 
     return Card(
@@ -362,7 +359,7 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (cover != null) cover,
+            cover?,
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
