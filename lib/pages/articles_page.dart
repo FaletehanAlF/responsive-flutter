@@ -267,6 +267,9 @@ class _ArticlesPageState extends State<ArticlesPage> {
                                       },
                                       errorBuilder:
                                           (context, error, stackTrace) {
+                                        debugPrint(
+                                          'IMAGE ERROR:\nURL: $imageUrl\nERROR: $error',
+                                        );
                                         return Container(
                                           color: Theme.of(context)
                                               .colorScheme

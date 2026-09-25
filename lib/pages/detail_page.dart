@@ -222,6 +222,9 @@ class _DetailPageState extends State<DetailPage> {
                               );
                             },
                             errorBuilder: (context, error, stackTrace) {
+                              debugPrint(
+                                'IMAGE ERROR:\nURL: $imageUrl\nERROR: $error',
+                              );
                               return Container(
                                 color: Theme.of(context)
                                     .colorScheme

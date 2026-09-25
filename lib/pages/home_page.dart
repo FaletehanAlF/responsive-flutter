@@ -276,6 +276,9 @@ class _HomePageState extends State<HomePage> {
                                         },
                                         errorBuilder:
                                             (context, error, stackTrace) {
+                                          debugPrint(
+                                            'IMAGE ERROR:\nURL: $imageUrl\nERROR: $error',
+                                          );
                                           return Container(
                                             color: Theme.of(context)
                                                 .colorScheme
