@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/category.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../widgets/narata_app_bar.dart';
 
 class CategoryPage extends StatefulWidget {
   const CategoryPage({super.key});
