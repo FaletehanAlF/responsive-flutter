@@ -97,6 +97,10 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.pump();
 }
 
+Finder _addSubmitButton() {
+  return find.widgetWithText(FilledButton, 'Tambah Artikel');
+}
+
 void main() {
   const sizes = {
     'ponsel': Size(400, 800),
@@ -280,12 +284,10 @@ void main() {
   });
 
   group('AddPostPage', () {
-    Finder get submitButton => find.widgetWithText(FilledButton, 'Tambah Artikel');
-
     testWidgets('validasi menolak form kosong', (tester) async {
       await _pump(tester, AddPostPage(apiService: _api()));
 
-      await _tap(tester, submitButton);
+      await _tap(tester, _addSubmitButton());
 
       expect(tester.takeException(), isNull);
       expect(find.text('Judul artikel wajib diisi'), findsOneWidget);
@@ -348,7 +350,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       await _tap(tester, find.text('Teknologi').last);
 
-      await _tap(tester, submitButton);
+      await _tap(tester, _addSubmitButton());
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(tester.takeException(), isNull);
@@ -394,7 +396,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       await _tap(tester, find.text('Teknologi').last);
 
-      await _tap(tester, submitButton);
+      await _tap(tester, _addSubmitButton());
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(tester.takeException(), isNull);
@@ -546,10 +548,8 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byIcon(Icons.delete_outline).first);
-      await tester.pump();
-      await tester.tap(find.text('Hapus').last);
-      await tester.pump();
+      await _tap(tester, find.byIcon(Icons.delete_outline).first);
+      await _tap(tester, find.text('Hapus').last);
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(tester.takeException(), isNull);
@@ -566,12 +566,10 @@ void main() {
     ) async {
       await _pump(tester, CategoryPage(apiService: _api()));
 
-      await tester.tap(find.byType(FloatingActionButton));
-      await tester.pump();
+      await _tap(tester, find.byType(FloatingActionButton));
       expect(find.text('Tambah Kategori'), findsOneWidget);
 
-      await tester.tap(find.text('Simpan'));
-      await tester.pump();
+      await _tap(tester, find.widgetWithText(FilledButton, 'Simpan'));
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(tester.takeException(), isNull);
