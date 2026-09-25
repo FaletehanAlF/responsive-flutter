@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../models/category.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../utils/formatters.dart';
 import '../widgets/category_badge.dart';
 import '../widgets/narata_app_bar.dart';
 import 'detail_page.dart';
@@ -33,12 +33,8 @@ class _ArticlesPageState extends State<ArticlesPage> {
   void initState() {
     super.initState();
     _lastSignal = widget.refreshSignal;
-    _load();
-    searchController.addListener(() {
-      setState(() {
-        _keyword = searchController.text;
-      });
-    });
+    _startRequests();
+    searchController.addListener(_onSearchChanged);
   }
 
   @override
@@ -52,48 +48,51 @@ class _ArticlesPageState extends State<ArticlesPage> {
 
   @override
   void dispose() {
-    searchController.dispose();
+    searchController
+      ..removeListener(_onSearchChanged)
+      ..dispose();
     super.dispose();
   }
 
+  void _startRequests() {
+    _postsFuture = apiService.getPosts();
+    _categoriesFuture = apiService.getCategories();
+  }
+
   void _load() {
-    setState(() {
-      _postsFuture = apiService.getPosts();
-      _categoriesFuture = apiService.getCategories();
-    });
+    setState(_startRequests);
+  }
+
+  Future<void> _refresh() async {
+    _load();
+    await Future.wait([_postsFuture, _categoriesFuture]);
+  }
+
+  void _onSearchChanged() {
+    if (_keyword == searchController.text) return;
+    setState(() => _keyword = searchController.text);
   }
 
   List<Post> _applyFilter(List<Post> data) {
     final query = _keyword.trim().toLowerCase();
     return data.where((post) {
-      final matchCategory =
-          _selectedCategoryId == null || post.categoryId == _selectedCategoryId;
-      if (!matchCategory) return false;
+      if (_selectedCategoryId != null &&
+          post.categoryId != _selectedCategoryId) {
+        return false;
+      }
       if (query.isEmpty) return true;
       return post.title.toLowerCase().contains(query) ||
           post.content.toLowerCase().contains(query);
     }).toList();
   }
 
-  String _snippet(String content) {
-    final clean = content.trim().replaceAll(RegExp(r'\s+'), ' ');
-    if (clean.length <= 110) return clean;
-    return '${clean.substring(0, 110)}…';
-  }
-
-  String _formatDate(String raw) {
-    final value = raw.trim();
-    if (value.isEmpty) return '';
-    final parsed = DateTime.tryParse(value);
-    if (parsed == null) return value;
-    return DateFormat('d MMM yyyy', 'id').format(parsed);
-  }
-
   Future<void> _openDetail(Post post) async {
-    if (widget.onOpenDetail != null) {
-      widget.onOpenDetail!(post.id);
+    final onOpenDetail = widget.onOpenDetail;
+    if (onOpenDetail != null) {
+      onOpenDetail(post.id);
       return;
     }
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => DetailPage(postId: post.id)),
@@ -109,13 +108,12 @@ class _ArticlesPageState extends State<ArticlesPage> {
       appBar: const NarataAppBar(title: Text('Semua Artikel')),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final bool wideGrid = constraints.maxWidth >= 1100;
+          final bool useGrid = constraints.maxWidth >= 1100;
           final bool isDesktop = constraints.maxWidth >= 600;
-          final double cap = wideGrid
-              ? 1100
-              : (isDesktop ? 760 : double.infinity);
+          final double cap = useGrid ? 1100 : (isDesktop ? 760 : double.infinity);
+
           return RefreshIndicator(
-            onRefresh: () async => _load(),
+            onRefresh: _refresh,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.symmetric(vertical: 20),
@@ -129,71 +127,34 @@ class _ArticlesPageState extends State<ArticlesPage> {
                       children: [
                         Text(
                           'Semua Artikel',
-                          style: Theme.of(context).textTheme.headlineSmall
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Kelola seluruh artikel yang tersimpan.',
-                          style: Theme.of(context).textTheme.bodyMedium
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
                               ?.copyWith(color: colorScheme.outline),
                         ),
                         const SizedBox(height: 16),
-                        TextField(
-                          controller: searchController,
-                          textInputAction: TextInputAction.search,
-                          decoration: InputDecoration(
-                            hintText: 'Cari judul atau isi artikel…',
-                            prefixIcon: const Icon(Icons.search),
-                            filled: true,
-                            fillColor: colorScheme.surfaceContainerLow,
-                            suffixIcon: _keyword.isEmpty
-                                ? null
-                                : IconButton(
-                                    tooltip: 'Bersihkan',
-                                    icon: const Icon(Icons.clear),
-                                    onPressed: searchController.clear,
-                                  ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
+                        _buildSearchField(context, colorScheme),
                         const SizedBox(height: 12),
                         FutureBuilder<List<Category>>(
                           future: _categoriesFuture,
                           builder: (context, snapshot) {
-                            final data = snapshot.data ?? [];
-                            return SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: [
-                                  ChoiceChip(
-                                    label: const Text('Semua'),
-                                    selected: _selectedCategoryId == null,
-                                    onSelected: (_) {
-                                      setState(
-                                        () => _selectedCategoryId = null,
-                                      );
-                                    },
-                                  ),
-                                  ...data.map(
-                                    (category) => Padding(
-                                      padding: const EdgeInsets.only(left: 8),
-                                      child: ChoiceChip(
-                                        label: Text(category.name),
-                                        selected:
-                                            _selectedCategoryId == category.id,
-                                        onSelected: (_) {
-                                          setState(() {
-                                            _selectedCategoryId = category.id;
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            if (snapshot.hasError) {
+                              return const SizedBox.shrink();
+                            }
+                            return _CategoryFilterRow(
+                              categories: snapshot.data ?? const [],
+                              selectedId: _selectedCategoryId,
+                              onSelected: (id) {
+                                setState(() => _selectedCategoryId = id);
+                              },
                             );
                           },
                         ),
@@ -211,82 +172,70 @@ class _ArticlesPageState extends State<ArticlesPage> {
                               );
                             }
                             if (snapshot.hasError) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 48,
-                                ),
-                                child: Center(
-                                  child: Column(
-                                    children: [
-                                      Icon(
-                                        Icons.cloud_off_outlined,
-                                        size: 48,
-                                        color: colorScheme.outline,
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        'Gagal memuat artikel',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      OutlinedButton.icon(
-                                        onPressed: _load,
-                                        icon: const Icon(Icons.refresh),
-                                        label: const Text('Coba lagi'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              return _LoadError(
+                                message: 'Gagal memuat artikel',
+                                detail:
+                                    'Pastikan backend NARATA sedang berjalan.',
+                                onRetry: _load,
                               );
                             }
 
-                            final filtered = _applyFilter(snapshot.data ?? []);
+                            final filtered = _applyFilter(
+                              snapshot.data ?? const [],
+                            );
                             if (filtered.isEmpty) {
-                              return _emptyState(context);
+                              return _EmptyState(
+                                isSearching:
+                                    _keyword.trim().isNotEmpty ||
+                                        _selectedCategoryId != null,
+                              );
                             }
 
-                            final Widget content;
-                            if (wideGrid) {
-                              content = GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: filtered.length,
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      crossAxisSpacing: 12,
-                                      mainAxisSpacing: 12,
-                                      childAspectRatio: 1.05,
-                                    ),
-                                itemBuilder: (context, index) =>
-                                    _gridCard(context, filtered[index]),
-                              );
-                            } else {
-                              content = ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: filtered.length,
-                                separatorBuilder: (context, index) =>
-                                    const SizedBox(height: 12),
-                                itemBuilder: (context, index) =>
-                                    _listCard(context, filtered[index]),
-                              );
-                            }
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   '${filtered.length} artikel ditemukan',
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(color: colorScheme.outline),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: colorScheme.outline,
+                                      ),
                                 ),
                                 const SizedBox(height: 8),
-                                content,
+                                if (useGrid)
+                                  GridView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: filtered.length,
+                                    gridDelegate:
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      crossAxisSpacing: 12,
+                                      mainAxisSpacing: 12,
+                                      childAspectRatio: 1.05,
+                                    ),
+                                    itemBuilder: (context, index) => _gridCard(
+                                      context,
+                                      filtered[index],
+                                    ),
+                                  )
+                                else
+                                  ListView.separated(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: filtered.length,
+                                    separatorBuilder: (context, index) =>
+                                        const SizedBox(height: 12),
+                                    itemBuilder: (context, index) => _listCard(
+                                      context,
+                                      filtered[index],
+                                      maxImageHeight: isDesktop ? 280 : null,
+                                    ),
+                                  ),
                               ],
                             );
                           },
@@ -303,77 +252,110 @@ class _ArticlesPageState extends State<ArticlesPage> {
     );
   }
 
-  Widget _cardShell(BuildContext context, Post post, Widget child) {
+  Widget _buildSearchField(BuildContext context, ColorScheme colorScheme) {
+    return TextField(
+      controller: searchController,
+      textInputAction: TextInputAction.search,
+      decoration: InputDecoration(
+        hintText: 'Cari judul atau isi artikel…',
+        prefixIcon: const Icon(Icons.search),
+        filled: true,
+        fillColor: colorScheme.surfaceContainerLow,
+        suffixIcon: _keyword.isEmpty
+            ? null
+            : IconButton(
+                tooltip: 'Bersihkan',
+                icon: const Icon(Icons.clear),
+                onPressed: searchController.clear,
+              ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+
+  Widget _cardShell(Post post, Widget child) {
     return Card(
       clipBehavior: Clip.antiAlias,
       elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      child: InkWell(onTap: () => _openDetail(post), child: child),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: InkWell(
+        onTap: () => _openDetail(post),
+        child: child,
+      ),
     );
   }
 
   Widget _coverImage(
     BuildContext context,
     String imageUrl, {
-    double? maxHeight,
+    double? height,
   }) {
-    final image = Image.network(
-      imageUrl,
+    return SizedBox(
+      height: height,
       width: double.infinity,
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return const Center(child: CircularProgressIndicator());
-      },
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: const Center(child: Icon(Icons.image_not_supported, size: 40)),
-        );
-      },
+      child: Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: const Center(
+              child: Icon(Icons.image_not_supported, size: 40),
+            ),
+          );
+        },
+      ),
     );
-    if (maxHeight != null) {
-      return SizedBox(height: maxHeight, width: double.infinity, child: image);
-    }
-    return AspectRatio(aspectRatio: 16 / 9, child: image);
   }
 
   Widget _metaRow(BuildContext context, Post post) {
     final colorScheme = Theme.of(context).colorScheme;
-    final date = _formatDate(post.createdAt);
+    final date = formatPostDate(post.createdAt);
     return Row(
       children: [
         if (date.isNotEmpty) ...[
           Icon(Icons.calendar_today, size: 13, color: colorScheme.outline),
           const SizedBox(width: 4),
-          Text(
-            date,
-            style: Theme.of(context).textTheme.bodySmall
-                ?.copyWith(color: colorScheme.outline),
+          Expanded(
+            child: Text(
+              date,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: colorScheme.outline),
+            ),
           ),
-        ],
-        const Spacer(),
+        ] else
+          const Spacer(),
         Icon(Icons.arrow_forward, size: 18, color: colorScheme.primary),
       ],
     );
   }
 
-  Widget _listCard(BuildContext context, Post post) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _listCard(BuildContext context, Post post, {double? maxImageHeight}) {
     final imageUrl = post.imageUrl;
-    final bool isDesktop = MediaQuery.sizeOf(context).width >= 600;
     return _cardShell(
-      context,
       post,
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           if (imageUrl != null)
-            _coverImage(context, imageUrl, maxHeight: isDesktop ? 280 : null),
+            _coverImage(context, imageUrl, height: maxImageHeight),
           Padding(
             padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 CategoryBadge(label: post.categoryName),
                 const SizedBox(height: 6),
@@ -381,12 +363,14 @@ class _ArticlesPageState extends State<ArticlesPage> {
                   post.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
                       ?.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  _snippet(post.content),
+                  post.snippet,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium,
@@ -402,15 +386,13 @@ class _ArticlesPageState extends State<ArticlesPage> {
   }
 
   Widget _gridCard(BuildContext context, Post post) {
-    final colorScheme = Theme.of(context).colorScheme;
     final imageUrl = post.imageUrl;
     return _cardShell(
-      context,
       post,
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (imageUrl != null) _coverImage(context, imageUrl),
+          if (imageUrl != null) _coverImage(context, imageUrl, height: 150),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -423,12 +405,14 @@ class _ArticlesPageState extends State<ArticlesPage> {
                     post.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
                         ?.copyWith(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    _snippet(post.content),
+                    post.snippet,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodyMedium,
@@ -443,10 +427,107 @@ class _ArticlesPageState extends State<ArticlesPage> {
       ),
     );
   }
+}
 
-  Widget _emptyState(BuildContext context) {
+class _CategoryFilterRow extends StatelessWidget {
+  final List<Category> categories;
+  final int? selectedId;
+  final ValueChanged<int?> onSelected;
+
+  const _CategoryFilterRow({
+    required this.categories,
+    required this.selectedId,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (categories.isEmpty && selectedId == null) {
+      return const SizedBox.shrink();
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          ChoiceChip(
+            label: const Text('Semua'),
+            selected: selectedId == null,
+            onSelected: (_) => onSelected(null),
+          ),
+          for (final category in categories)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: ChoiceChip(
+                label: Text(category.name),
+                selected: selectedId == category.id,
+                onSelected: (_) => onSelected(category.id),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoadError extends StatelessWidget {
+  final String message;
+  final String detail;
+  final VoidCallback onRetry;
+
+  const _LoadError({
+    required this.message,
+    required this.detail,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.cloud_off_outlined,
+              size: 48,
+              color: Theme.of(context).colorScheme.outline,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              detail,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Coba lagi'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final bool isSearching;
+
+  const _EmptyState({required this.isSearching});
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final bool searching = _keyword.trim().isNotEmpty;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: Center(
@@ -459,24 +540,28 @@ class _ArticlesPageState extends State<ArticlesPage> {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                searching ? Icons.search_off : Icons.article_outlined,
+                isSearching ? Icons.search_off : Icons.article_outlined,
                 size: 44,
                 color: colorScheme.outline,
               ),
             ),
             const SizedBox(height: 16),
             Text(
-              searching ? 'Artikel tidak ditemukan' : 'Belum ada artikel',
-              style: Theme.of(context).textTheme.titleMedium
+              isSearching ? 'Artikel tidak ditemukan' : 'Belum ada artikel',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
                   ?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 6),
             Text(
-              searching
+              isSearching
                   ? 'Ubah kata kunci atau filter kategori.'
                   : 'Tambahkan artikel pertama untuk mulai mengisi NARATA.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
                   ?.copyWith(color: colorScheme.outline),
             ),
           ],
