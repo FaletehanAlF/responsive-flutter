@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../models/post.dart';
 import '../services/api_service.dart';
@@ -32,12 +33,14 @@ class _DetailPageState extends State<DetailPage> {
     });
   }
 
+  /// Format tanggal via package intl (locale Indonesia),
+  /// contoh: "25 Sep 2026". Kembalikan mentah bila tak ter-parse.
   String _formatDate(String raw) {
     final value = raw.trim();
     if (value.isEmpty) return '';
-    if (value.contains('T')) return value.split('T').first;
-    if (value.length >= 10) return value.substring(0, 10);
-    return value;
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) return value;
+    return DateFormat('d MMM yyyy', 'id').format(parsed);
   }
 
   /// Gambar utama artikel.

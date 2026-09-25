@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../models/category.dart';
 import '../models/post.dart';
@@ -51,12 +52,21 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  /// Cuplikan singkat isi artikel, diakhiri "...." bila terpotong.
+  String _snippet(String content, [int max = 100]) {
+    final clean = content.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (clean.length <= max) return clean;
+    return '${clean.substring(0, max)}....';
+  }
+
+  /// Format tanggal via package intl (locale Indonesia),
+  /// contoh: "25 Sep 2026". Kembalikan mentah bila tak ter-parse.
   String _formatDate(String raw) {
     final value = raw.trim();
     if (value.isEmpty) return '';
-    if (value.contains('T')) return value.split('T').first;
-    if (value.length >= 10) return value.substring(0, 10);
-    return value;
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) return value;
+    return DateFormat('d MMM yyyy', 'id').format(parsed);
   }
 
   Future<void> _openDetail(Post post) async {
@@ -100,18 +110,6 @@ class _HomePageState extends State<HomePage> {
           style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 1.2),
         ),
         actions: [
-          IconButton(
-            tooltip: 'Notifikasi',
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationPage(),
-                ),
-              );
-            },
-          ),
           IconButton(
             tooltip: 'Profil',
             icon: const Icon(Icons.person_outline),
@@ -256,7 +254,7 @@ class _HomePageState extends State<HomePage> {
                                                 : 2,
                                         crossAxisSpacing: 12,
                                         mainAxisSpacing: 12,
-                                        childAspectRatio: 0.8,
+                                        childAspectRatio: 0.78,
                                       ),
                                       itemBuilder: (context, index) =>
                                           _gridCard(
@@ -456,6 +454,16 @@ class _HomePageState extends State<HomePage> {
                               color: Colors.white,
                             ),
                       ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _snippet(post.content, 90),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                        ),
+                      ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
@@ -597,6 +605,13 @@ class _HomePageState extends State<HomePage> {
                             fontWeight: FontWeight.w600,
                           ),
                     ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _snippet(post.content),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                     const Spacer(),
                     Row(
                       children: [
@@ -657,7 +672,7 @@ class _HomePageState extends State<HomePage> {
                 borderRadius: BorderRadius.circular(12),
                 child: SizedBox(
                   width: 96,
-                  height: 104,
+                  height: 120,
                   child: imageUrl != null
                       ? Image.network(
                           imageUrl,
@@ -736,6 +751,13 @@ class _HomePageState extends State<HomePage> {
                           Theme.of(context).textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _snippet(post.content, 80),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 6),
                     Row(

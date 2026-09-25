@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'pages/main_shell.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Muat data locale Indonesia agar DateFormat('id') bisa dipakai
+  // di seluruh halaman untuk memformat tanggal artikel.
+  await initializeDateFormatting('id', null);
   runApp(const MyApp());
 }
 
