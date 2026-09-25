@@ -52,9 +52,7 @@ class SettingsPage extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: Theme.of(context)
-            .textTheme
-            .titleMedium
+        style: Theme.of(context).textTheme.titleMedium
             ?.copyWith(fontWeight: FontWeight.w600),
       ),
     );
@@ -83,17 +81,13 @@ class SettingsPage extends StatelessWidget {
                   children: [
                     Text(
                       'Pengaturan',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
+                      style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Kelola pengaturan dan informasi aplikasi.',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
+                      style: Theme.of(context).textTheme.bodyMedium
                           ?.copyWith(color: colorScheme.outline),
                     ),
                     const SizedBox(height: 20),
@@ -137,12 +131,8 @@ class SettingsPage extends StatelessWidget {
                                   const SizedBox(height: 2),
                                   Text(
                                     'Blog Management • Versi $kAppVersion',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          color: colorScheme.outline,
-                                        ),
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(color: colorScheme.outline),
                                   ),
                                 ],
                               ),
@@ -169,11 +159,7 @@ class SettingsPage extends StatelessWidget {
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () => _openCategories(context),
                           ),
-                          const Divider(
-                            height: 1,
-                            indent: 16,
-                            endIndent: 16,
-                          ),
+                          const Divider(height: 1, indent: 16, endIndent: 16),
                           ListTile(
                             leading: const Icon(Icons.info_outline),
                             title: const Text('Tentang NARATA'),
@@ -228,9 +214,7 @@ class SettingsPage extends StatelessWidget {
         Expanded(child: Text(label)),
         Text(
           value,
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium
+          style: Theme.of(context).textTheme.bodyMedium
               ?.copyWith(fontWeight: FontWeight.w600),
         ),
       ],
