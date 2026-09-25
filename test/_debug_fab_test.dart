@@ -6,20 +6,35 @@ import 'package:responsive_ui/pages/category_page.dart';
 import 'package:responsive_ui/services/api_service.dart';
 import 'dart:convert';
 
+const cats = [
+  {'id': 1, 'name': 'Teknologi'},
+  {'id': 2, 'name': 'Pengembangan Dart'},
+];
+
+ApiService api() {
+  final client = MockClient((request) async {
+    if (request.url.path == '/categories') {
+      return http.Response(jsonEncode({'success': true, 'data': cats}), 200);
+    }
+    return http.Response(jsonEncode({'success': true, 'data': <Map<String, dynamic>>[]}), 200);
+  });
+  return ApiService(baseUrl: 'http://t', client: client);
+}
+
 void main() {
-  testWidgets('fab', (tester) async {
-    final client = MockClient((r) async => http.Response(
-        jsonEncode({'success': true, 'data': <Map<String, dynamic>>[]}), 200));
-    await tester.pumpWidget(MaterialApp(
-      home: CategoryPage(apiService: ApiService(baseUrl: 'http://t', client: client)),
-    ));
+  testWidgets('fab with data', (tester) async {
+    await tester.pumpWidget(MaterialApp(home: CategoryPage(apiService: api())));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
-    debugPrint('FAB count: ${find.byType(FloatingActionButton).evaluate().length}');
+    await tester.pump(const Duration(milliseconds: 100));
+    debugPrint('tiles: ${find.byType(ListTile).evaluate().length}');
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 300));
     debugPrint('Dialog text: ${find.text('Tambah Kategori').evaluate().length}');
-    debugPrint('AlertDialog count: ${find.byType(AlertDialog).evaluate().length}');
+    await tester.tap(find.widgetWithText(FilledButton, 'Simpan'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    debugPrint('empty msg: ${find.text('Nama kategori wajib diisi').evaluate().length}');
+    debugPrint('Dialog still: ${find.text('Tambah Kategori').evaluate().length}');
   });
 }
