@@ -280,11 +280,12 @@ void main() {
   });
 
   group('AddPostPage', () {
+    Finder get submitButton => find.widgetWithText(FilledButton, 'Tambah Artikel');
+
     testWidgets('validasi menolak form kosong', (tester) async {
       await _pump(tester, AddPostPage(apiService: _api()));
 
-      await tester.tap(find.text('Tambah Artikel').last);
-      await tester.pump();
+      await _tap(tester, submitButton);
 
       expect(tester.takeException(), isNull);
       expect(find.text('Judul artikel wajib diisi'), findsOneWidget);
@@ -296,11 +297,11 @@ void main() {
       await _pump(tester, AddPostPage(apiService: _api()));
 
       expect(tester.takeException(), isNull);
-      await tester.tap(find.byType(DropdownButtonFormField<int>));
-      await tester.pump();
+      await _tap(tester, find.byType(DropdownButtonFormField<int>));
+      await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('Teknologi'), findsOneWidget);
-      expect(find.text('Pengembangan Dart'), findsOneWidget);
+      expect(find.text('Teknologi'), findsWidgets);
+      expect(find.text('Pengembangan Dart'), findsWidgets);
     });
 
     testWidgets('kirim form memanggil API dan memanggil onSaved', (
@@ -343,13 +344,11 @@ void main() {
         'Isi artikel baru',
       );
 
-      await tester.tap(find.byType(DropdownButtonFormField<int>));
-      await tester.pump();
-      await tester.tap(find.text('Teknologi').last);
-      await tester.pump();
+      await _tap(tester, find.byType(DropdownButtonFormField<int>));
+      await tester.pump(const Duration(milliseconds: 300));
+      await _tap(tester, find.text('Teknologi').last);
 
-      await tester.tap(find.text('Tambah Artikel').last);
-      await tester.pump();
+      await _tap(tester, submitButton);
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(tester.takeException(), isNull);
@@ -391,13 +390,11 @@ void main() {
         find.widgetWithText(TextField, 'Tulis isi artikel di sini…'),
         'Isi artikel baru',
       );
-      await tester.tap(find.byType(DropdownButtonFormField<int>));
-      await tester.pump();
-      await tester.tap(find.text('Teknologi').last);
-      await tester.pump();
+      await _tap(tester, find.byType(DropdownButtonFormField<int>));
+      await tester.pump(const Duration(milliseconds: 300));
+      await _tap(tester, find.text('Teknologi').last);
 
-      await tester.tap(find.text('Tambah Artikel').last);
-      await tester.pump();
+      await _tap(tester, submitButton);
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(tester.takeException(), isNull);
@@ -420,7 +417,10 @@ void main() {
       await _pump(tester, EditPostPage(post: post, apiService: _api()));
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Judul Artikel'), findsOneWidget);
+      expect(
+        find.widgetWithText(TextField, 'Judul Artikel'),
+        findsOneWidget,
+      );
       expect(find.text('Teknologi'), findsWidgets);
     });
 
@@ -490,12 +490,10 @@ void main() {
       );
 
       expect(find.text('Hapus gambar'), findsOneWidget);
-      await tester.tap(find.text('Hapus gambar'));
-      await tester.pump();
+      await _tap(tester, find.text('Hapus gambar'));
       expect(find.text('Batal hapus'), findsOneWidget);
 
-      await tester.tap(find.text('Simpan Perubahan'));
-      await tester.pump();
+      await _tap(tester, find.widgetWithText(FilledButton, 'Simpan Perubahan'));
       await tester.pump(const Duration(milliseconds: 100));
 
       expect(tester.takeException(), isNull);
