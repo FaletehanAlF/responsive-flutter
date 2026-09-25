@@ -11,16 +11,23 @@ import 'detail_page.dart';
 class ArticlesPage extends StatefulWidget {
   final int refreshSignal;
   final ValueChanged<int>? onOpenDetail;
+  final ApiService? apiService;
 
-  const ArticlesPage({super.key, this.refreshSignal = 0, this.onOpenDetail});
+  const ArticlesPage({
+    super.key,
+    this.refreshSignal = 0,
+    this.onOpenDetail,
+    this.apiService,
+  });
 
   @override
   State<ArticlesPage> createState() => _ArticlesPageState();
 }
 
 class _ArticlesPageState extends State<ArticlesPage> {
-  final ApiService apiService = ApiService();
   final TextEditingController searchController = TextEditingController();
+
+  late final ApiService apiService = widget.apiService ?? ApiService();
 
   late Future<List<Post>> _postsFuture;
   late Future<List<Category>> _categoriesFuture;

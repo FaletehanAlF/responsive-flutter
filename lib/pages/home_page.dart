@@ -11,15 +11,21 @@ import 'detail_page.dart';
 class HomePage extends StatefulWidget {
   final int refreshSignal;
   final ValueChanged<int>? onOpenDetail;
+  final ApiService? apiService;
 
-  const HomePage({super.key, this.refreshSignal = 0, this.onOpenDetail});
+  const HomePage({
+    super.key,
+    this.refreshSignal = 0,
+    this.onOpenDetail,
+    this.apiService,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  final ApiService apiService = ApiService();
+  late final ApiService apiService = widget.apiService ?? ApiService();
 
   late Future<List<Post>> _postsFuture;
   late Future<List<Category>> _categoriesFuture;
