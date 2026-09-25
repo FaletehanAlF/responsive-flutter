@@ -155,24 +155,67 @@ void main() {
   });
 
   group('MyApp', () {
-    testWidgets('tanpa error saat backend tidak terjangkau', (tester) async {
+    Future<void> pumpAtSize(WidgetTester tester, Size size) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
       await tester.pumpWidget(const MyApp());
       await tester.pump();
+    }
+
+    testWidgets('layout ponsel tanpa error saat backend tidak terjangkau', (
+      tester,
+    ) async {
+      await pumpAtSize(tester, const Size(400, 800));
 
       expect(tester.takeException(), isNull);
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(find.text('Beranda'), findsWidgets);
+      expect(find.text('Selamat datang di NARATA'), findsOneWidget);
     });
 
-    testWidgets('navigasi ke tabArtikel', (tester) async {
-      await tester.pumpWidget(const MyApp());
-      await tester.pump();
+    testWidgets('layout desktop tanpa error', (tester) async {
+      await pumpAtSize(tester, const Size(1400, 900));
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(NavigationRail), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+    });
+
+    testWidgets('navigasi ke tab Artikel', (tester) async {
+      await pumpAtSize(tester, const Size(400, 800));
 
       await tester.tap(find.text('Artikel'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump();
 
       expect(tester.takeException(), isNull);
       expect(find.text('Semua Artikel'), findsWidgets);
+    });
+
+    testWidgets('navigasi ke tab Tambah dan Pengaturan', (tester) async {
+      await pumpAtSize(tester, const Size(400, 800));
+
+      await tester.tap(find.text('Tambah'));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('Tambah Artikel'), findsWidgets);
+
+      await tester.tap(find.text('Pengaturan'));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(find.text('Kelola Kategori'), findsOneWidget);
+    });
+
+    testWidgets('menampilkan panel detail tanpa error', (tester) async {
+      await pumpAtSize(tester, const Size(400, 800));
+
+      await tester.tap(find.text('Artikel'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Gagal memuat artikel'), findsOneWidget);
     });
   });
 }
