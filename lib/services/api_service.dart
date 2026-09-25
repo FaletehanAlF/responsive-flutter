@@ -33,8 +33,16 @@ class ApiException implements Exception {
 
 class ApiService {
   final String baseUrl;
+  final http.Client _client;
 
-  ApiService({this.baseUrl = kApiBaseUrl});
+  ApiService({this.baseUrl = kApiBaseUrl, http.Client? client})
+    : _client = client ?? http.Client();
+
+  Uri _uri(String path, [Map<String, String>? query]) {
+    return Uri.parse('$baseUrl$path').replace(
+      queryParameters: query == null || query.isEmpty ? null : query,
+    );
+  }
 
   Never _fail(http.Response response, String fallback) {
     String message = fallback;
