@@ -91,6 +91,7 @@ class _AddPostPageState extends State<AddPostPage> {
         title: titleController.text.trim(),
         content: contentController.text.trim(),
         categoryId: selectedCategoryId!,
+        image: _selectedImage,
       );
 
       if (!mounted) return;
