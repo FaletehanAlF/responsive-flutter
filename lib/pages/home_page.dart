@@ -10,8 +10,9 @@ import 'profile_page.dart';
 
 class HomePage extends StatefulWidget {
   final int refreshSignal;
+  final ValueChanged<int>? onOpenDetail;
 
-  const HomePage({super.key, this.refreshSignal = 0});
+  const HomePage({super.key, this.refreshSignal = 0, this.onOpenDetail});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -58,6 +59,10 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _openDetail(Post post) async {
+    if (widget.onOpenDetail != null) {
+      widget.onOpenDetail!(post.id);
+      return;
+    }
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => DetailPage(postId: post.id)),

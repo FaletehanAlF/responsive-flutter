@@ -10,8 +10,9 @@ import 'profile_page.dart';
 
 class ArticlesPage extends StatefulWidget {
   final int refreshSignal;
+  final ValueChanged<int>? onOpenDetail;
 
-  const ArticlesPage({super.key, this.refreshSignal = 0});
+  const ArticlesPage({super.key, this.refreshSignal = 0, this.onOpenDetail});
 
   @override
   State<ArticlesPage> createState() => _ArticlesPageState();
@@ -89,6 +90,10 @@ class _ArticlesPageState extends State<ArticlesPage> {
   }
 
   Future<void> _openDetail(Post post) async {
+    if (widget.onOpenDetail != null) {
+      widget.onOpenDetail!(post.id);
+      return;
+    }
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => DetailPage(postId: post.id)),
