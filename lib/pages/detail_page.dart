@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../widgets/narata_app_bar.dart';
 import 'edit_post_page.dart';
 
 class DetailPage extends StatefulWidget {
@@ -117,11 +118,10 @@ class _DetailPageState extends State<DetailPage> {
 
         if (snapshot.hasError) {
           return Scaffold(
-            appBar: AppBar(
-              leading: widget.onClose == null
-                  ? null
-                  : BackButton(onPressed: () => _close(false)),
+            appBar: NarataAppBar(
               title: const Text('Detail Artikel'),
+              showBack: true,
+              onBack: widget.onClose == null ? null : () => _close(false),
             ),
             body: Center(
               child: Column(
