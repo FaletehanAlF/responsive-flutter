@@ -253,8 +253,9 @@ class _ArticlesPageState extends State<ArticlesPage> {
                               return _emptyState(context);
                             }
 
+                            final Widget content;
                             if (wideGrid) {
-                              return GridView.builder(
+                              content = GridView.builder(
                                 shrinkWrap: true,
                                 physics:
                                     const NeverScrollableScrollPhysics(),
@@ -269,9 +270,8 @@ class _ArticlesPageState extends State<ArticlesPage> {
                                 itemBuilder: (context, index) =>
                                     _gridCard(context, filtered[index]),
                               );
-                            }
-
-                            return ListView.separated(
+                            } else {
+                              content = ListView.separated(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: filtered.length,
