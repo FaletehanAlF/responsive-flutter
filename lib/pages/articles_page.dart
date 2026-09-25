@@ -382,16 +382,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  post.categoryName.toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
-                      ),
-                ),
+                CategoryBadge(label: post.categoryName),
                 const SizedBox(height: 6),
                 Text(
                   post.title,
@@ -434,16 +425,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    post.categoryName.toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                        ),
-                  ),
+                  CategoryBadge(label: post.categoryName),
                   const SizedBox(height: 4),
                   Text(
                     post.title,
