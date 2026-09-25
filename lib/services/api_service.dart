@@ -95,10 +95,12 @@ class ApiService {
     request.fields['category_id'] = categoryId.toString();
 
     if (image != null) {
+      final bytes = await image.readAsBytes();
       request.files.add(
-        await http.MultipartFile.fromPath(
+        http.MultipartFile.fromBytes(
           'image',
-          image.path,
+          bytes,
+          filename: image.name,
         ),
       );
     }
