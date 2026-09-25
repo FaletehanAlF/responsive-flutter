@@ -137,9 +137,7 @@ class _HomePageState extends State<HomePage> {
                             );
                           }
                           if (snapshot.hasError) {
-                            return _CategoryFilterError(
-                              onRetry: _load,
-                            );
+                            return const _CategoryFilterError();
                           }
                           return _CategoryFilterRow(
                             categories: snapshot.data ?? const [],
@@ -405,9 +403,7 @@ class _CategoryFilterRow extends StatelessWidget {
 }
 
 class _CategoryFilterError extends StatelessWidget {
-  final VoidCallback onRetry;
-
-  const _CategoryFilterError({required this.onRetry});
+  const _CategoryFilterError();
 
   @override
   Widget build(BuildContext context) {
@@ -418,14 +414,13 @@ class _CategoryFilterError extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            'Gagal memuat kategori',
+            'Kategori tidak dapat dimuat',
             style: Theme.of(context)
                 .textTheme
                 .bodySmall
                 ?.copyWith(color: colorScheme.outline),
           ),
         ),
-        TextButton(onPressed: onRetry, child: const Text('Coba lagi')),
       ],
     );
   }

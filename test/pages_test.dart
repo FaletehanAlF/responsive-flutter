@@ -81,15 +81,20 @@ ApiService _api({
 }
 
 Widget _wrap(Widget child) {
-  return MaterialApp(
-    home: child,
-  );
+  return MaterialApp(home: child);
 }
 
 Future<void> _pump(WidgetTester tester, Widget child) async {
   await tester.pumpWidget(_wrap(child));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 100));
+}
+
+Future<void> _tap(WidgetTester tester, Finder finder) async {
+  await tester.ensureVisible(finder);
+  await tester.pump();
+  await tester.tap(finder);
+  await tester.pump();
 }
 
 void main() {
