@@ -7,33 +7,21 @@ class SettingsPage extends StatelessWidget {
 
   const SettingsPage({super.key, this.onDataChanged});
 
-  void _showAppInfo(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  void _showAbout(BuildContext context) {
     showDialog<void>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Informasi Aplikasi'),
-          content: Column(
+          title: const Text('Tentang NARATA'),
+          content: const Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _infoRow(context, 'Nama', 'NARATA Blog'),
-              const SizedBox(height: 8),
-              _infoRow(context, 'Versi', '1.0.0'),
-              const SizedBox(height: 8),
-              _infoRow(
-                context,
-                'Backend',
-                'http://localhost:8000',
-              ),
-              const SizedBox(height: 8),
               Text(
-                'Sistem manajemen artikel dan kategori.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.outline,
-                    ),
+                'NARATA adalah sistem manajemen blog untuk membuat, membaca, mengubah, dan menghapus artikel beserta kategorinya.',
               ),
+              SizedBox(height: 12),
+              Text('Version 1.0.0'),
             ],
           ),
           actions: [
@@ -47,26 +35,12 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _infoRow(BuildContext context, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 72,
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
-                ),
+  Widget _sectionTitle(BuildContext context, String text) {
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
           ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-      ],
     );
   }
 
@@ -80,118 +54,185 @@ class SettingsPage extends StatelessWidget {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final bool isDesktop = constraints.maxWidth >= 600;
-          final double cap = isDesktop ? 760 : double.infinity;
+          final bool desktop = constraints.maxWidth >= 600;
           return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 20),
+            padding: EdgeInsets.symmetric(
+              horizontal: desktop ? 32 : 16,
+              vertical: desktop ? 28 : 20,
+            ),
             child: Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: cap),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Card(
-                        elevation: 0,
-                        color: colorScheme.surfaceContainerLow,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(
-                            color: colorScheme.outlineVariant,
+                constraints: BoxConstraints(
+                  maxWidth: desktop ? 960 : double.infinity,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Pengaturan',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Kelola pengaturan dan informasi aplikasi.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.outline,
                           ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: Icon(
-                                  Icons.newspaper_outlined,
-                                  size: 30,
-                                  color: colorScheme.onPrimaryContainer,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              const Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'NARATA',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 1.2,
-                                      ),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text('Blog Management System'),
-                                    SizedBox(height: 2),
-                                    Text('Version 1.0.0'),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                    ),
+                    const SizedBox(height: 20),
+                    _sectionTitle(context, 'NARATA'),
+                    const SizedBox(height: 8),
+                    Card(
+                      elevation: 0,
+                      color: colorScheme.surfaceContainerLow,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: colorScheme.outlineVariant,
                         ),
                       ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Menu',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 8),
-                      Card(
-                        elevation: 1,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Column(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
                           children: [
-                            ListTile(
-                              leading: const Icon(
-                                Icons.category_outlined,
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                              title: const Text('Kelola Kategori'),
-                              subtitle: const Text(
-                                'Tambah, ubah, dan hapus kategori',
+                              child: Icon(
+                                Icons.newspaper_outlined,
+                                size: 30,
+                                color: colorScheme.onPrimaryContainer,
                               ),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () async {
-                                await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const CategoryPage(),
-                                  ),
-                                );
-                                onDataChanged?.call();
-                              },
                             ),
-                            const Divider(height: 1, indent: 16, endIndent: 16),
-                            ListTile(
-                              leading: const Icon(Icons.info_outline),
-                              title: const Text('Informasi Aplikasi'),
-                              subtitle:
-                                  const Text('Versi dan detail aplikasi'),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () => _showAppInfo(context),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'NARATA',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.2,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text('Blog Management'),
+                                  SizedBox(height: 2),
+                                  Text('Version 1.0.0'),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 20),
+                    _sectionTitle(context, 'Pengaturan'),
+                    const SizedBox(height: 8),
+                    Card(
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Column(
+                        children: [
+                          ListTile(
+                            leading: const Icon(
+                              Icons.category_outlined,
+                            ),
+                            title: const Text('Kelola Kategori'),
+                            subtitle: const Text(
+                              'Tambah, edit, dan hapus kategori artikel.',
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const CategoryPage(),
+                                ),
+                              );
+                              onDataChanged?.call();
+                            },
+                          ),
+                          const Divider(
+                              height: 1, indent: 16, endIndent: 16),
+                          ListTile(
+                            leading: const Icon(Icons.info_outline),
+                            title: const Text('Tentang NARATA'),
+                            subtitle:
+                                const Text('Informasi aplikasi.'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => _showAbout(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    _sectionTitle(context, 'Informasi Aplikasi'),
+                    const SizedBox(height: 8),
+                    Card(
+                      elevation: 0,
+                      color: colorScheme.surfaceContainerLow,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        side: BorderSide(
+                          color: colorScheme.outlineVariant,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                const Expanded(
+                                    child: Text('Version')),
+                                Text(
+                                  '1.0.0',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Expanded(child: Text('Sistem')),
+                                Text(
+                                  'Blog Management System',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                 ),
               ),
             ),
