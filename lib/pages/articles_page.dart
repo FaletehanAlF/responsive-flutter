@@ -4,9 +4,8 @@ import 'package:intl/intl.dart';
 import '../models/category.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../widgets/narata_app_bar.dart';
 import 'detail_page.dart';
-import 'notification_page.dart';
-import 'profile_page.dart';
 
 class ArticlesPage extends StatefulWidget {
   final int refreshSignal;
@@ -106,34 +105,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text('Semua Artikel'),
-        actions: [
-          IconButton(
-            tooltip: 'Notifikasi',
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NotificationPage(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            tooltip: 'Profil',
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfilePage()),
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: const NarataAppBar(title: Text('Semua Artikel')),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool wideGrid = constraints.maxWidth >= 1100;
