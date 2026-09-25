@@ -192,6 +192,29 @@ class _HomePageState extends State<HomePage> {
                                     )
                                     .toList();
 
+                            final bool wideHero =
+                                constraints.maxWidth >= 900;
+                            final List<Post> latest = filtered.length > 1
+                                ? filtered.skip(1).take(4).toList()
+                                : <Post>[];
+                            final List<Post> rest = filtered.length >
+                                    1 + latest.length
+                                ? filtered
+                                    .skip(1 + latest.length)
+                                    .toList()
+                                : <Post>[];
+                            final Widget tabs = catSnapshot.connectionState ==
+                                    ConnectionState.waiting
+                                ? Text(
+                                    'Memuat kategori…',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: colorScheme.outline,
+                                        ),
+                                  )
+                                : _categoryTabs(context, categories);
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -215,33 +238,61 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                 ),
                                 const SizedBox(height: 20),
-                                if (filtered.isNotEmpty) ...[
-                                  _featuredCard(context, filtered.first),
-                                  const SizedBox(height: 20),
-                                ],
-                                if (catSnapshot.connectionState ==
-                                    ConnectionState.waiting)
-                                  Text(
-                                    'Memuat kategori…',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          color: colorScheme.outline,
-                                        ),
-                                  )
-                                else
-                                  _categoryTabs(context, categories),
-                                const SizedBox(height: 8),
                                 if (filtered.isEmpty)
                                   _emptyState(context)
-                                else if (filtered.length > 1)
-                                  if (useGrid)
+                                else if (useGrid) ...[
+                                  if (wideHero)
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          flex: 5,
+                                          child: _featuredCard(
+                                            context,
+                                            filtered.first,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          flex: 3,
+                                          child: _latestList(
+                                            context,
+                                            latest,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  else ...[
+                                    _featuredCard(
+                                      context,
+                                      filtered.first,
+                                    ),
+                                    if (latest.isNotEmpty) ...[
+                                      const SizedBox(height: 16),
+                                      _latestList(context, latest),
+                                    ],
+                                  ],
+                                  const SizedBox(height: 20),
+                                  tabs,
+                                  if (rest.isNotEmpty) ...[
+                                    const SizedBox(height: 20),
+                                    Text(
+                                      'Jelajahi Artikel',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 19,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 12),
                                     GridView.builder(
                                       shrinkWrap: true,
                                       physics:
                                           const NeverScrollableScrollPhysics(),
-                                      itemCount: filtered.length - 1,
+                                      itemCount: rest.length,
                                       gridDelegate:
                                           SliverGridDelegateWithFixedCrossAxisCount(
                                         crossAxisCount:
@@ -250,15 +301,21 @@ class _HomePageState extends State<HomePage> {
                                                 : 2,
                                         crossAxisSpacing: 12,
                                         mainAxisSpacing: 12,
-                                        childAspectRatio: 0.85,
+                                        childAspectRatio: 0.8,
                                       ),
                                       itemBuilder: (context, index) =>
                                           _gridCard(
                                         context,
-                                        filtered[index + 1],
+                                        rest[index],
                                       ),
-                                    )
-                                  else
+                                    ),
+                                  ],
+                                ] else ...[
+                                  _featuredCard(context, filtered.first),
+                                  const SizedBox(height: 20),
+                                  tabs,
+                                  const SizedBox(height: 8),
+                                  if (filtered.length > 1)
                                     ListView.separated(
                                       shrinkWrap: true,
                                       physics:
@@ -272,6 +329,7 @@ class _HomePageState extends State<HomePage> {
                                         filtered[index + 1],
                                       ),
                                     ),
+                                ],
                               ],
                             );
                           },
@@ -340,6 +398,47 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _coverImage(String imageUrl, {double iconSize = 40}) {
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return const Center(child: CircularProgressIndicator());
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: Center(
+            child: Icon(Icons.image_not_supported, size: iconSize),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _coverPlaceholder(BuildContext context,
+      {IconData icon = Icons.article_outlined, double iconSize = 40}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      color: colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Icon(icon, size: iconSize, color: colorScheme.outline),
+      ),
+    );
+  }
+
+  Widget _dateText(BuildContext context, String date) {
+    return Text(
+      date,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.outline,
+          ),
+    );
+  }
+
   Widget _featuredCard(BuildContext context, Post post) {
     final colorScheme = Theme.of(context).colorScheme;
     final bool isDesktop = MediaQuery.sizeOf(context).width >= 600;
@@ -360,38 +459,9 @@ class _HomePageState extends State<HomePage> {
             fit: StackFit.expand,
             children: [
               if (imageUrl != null)
-                Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: colorScheme.surfaceContainerHighest,
-                      child: const Center(
-                        child: Icon(
-                          Icons.image_not_supported,
-                          size: 44,
-                        ),
-                      ),
-                    );
-                  },
-                )
+                _coverImage(imageUrl, iconSize: 44)
               else
-                Container(
-                  color: colorScheme.surfaceContainerHighest,
-                  child: Center(
-                    child: Icon(
-                      Icons.article_outlined,
-                      size: 48,
-                      color: colorScheme.outline,
-                    ),
-                  ),
-                ),
+                _coverPlaceholder(context, iconSize: 48),
               Positioned(
                 top: 12,
                 left: 12,
@@ -499,141 +569,149 @@ class _HomePageState extends State<HomePage> {
     final date = _formatDate(post.createdAt);
     return Card(
       clipBehavior: Clip.antiAlias,
-      elevation: 1,
+      elevation: 0,
+      color: colorScheme.surfaceContainerLow,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: colorScheme.outlineVariant),
       ),
       child: InkWell(
         onTap: () => _openDetail(post),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                AspectRatio(
-                  aspectRatio: 16 / 10,
-                  child: imageUrl != null
-                      ? Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: colorScheme.surfaceContainerHighest,
-                              child: const Center(
-                                child: Icon(Icons.image_not_supported),
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          color: colorScheme.surfaceContainerHighest,
-                          child: Center(
-                            child: Icon(
-                              Icons.article_outlined,
-                              size: 44,
-                              color: colorScheme.outline,
-                            ),
-                          ),
-                        ),
-                ),
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: -20,
-                  child: Center(
-                    child: Material(
-                      elevation: 2,
-                      shape: const CircleBorder(),
-                      color: Colors.white,
-                      child: InkWell(
-                        onTap: () => _openDetail(post),
-                        customBorder: const CircleBorder(),
-                        child: SizedBox(
-                          width: 40,
-                          height: 40,
-                          child: Icon(
-                            Icons.arrow_forward,
-                            size: 18,
-                            color: colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            AspectRatio(
+              aspectRatio: 16 / 10,
+              child: imageUrl != null
+                  ? _coverImage(imageUrl, iconSize: 44)
+                  : _coverPlaceholder(context, iconSize: 44),
             ),
-            const SizedBox(height: 28),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      post.categoryName.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
                             color: colorScheme.primary,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.8,
                           ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            post.categoryName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
+                                  color: colorScheme.outline,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       post.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w700,
                           ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
                     Text(
                       _snippet(post.content),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: colorScheme.outline,
+                          ),
                     ),
                     const Spacer(),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today,
-                          size: 13,
-                          color: colorScheme.outline,
-                        ),
-                        const SizedBox(width: 4),
-                        if (date.isNotEmpty)
-                          Expanded(
-                            child: Text(
-                              date,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: colorScheme.outline,
-                                  ),
-                            ),
-                          ),
-                      ],
-                    ),
+                    if (date.isNotEmpty) _dateText(context, date),
                   ],
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _latestList(BuildContext context, List<Post> latest) {
+    if (latest.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Artikel Terbaru',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: 12),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: latest.length,
+          separatorBuilder: (context, index) =>
+              const SizedBox(height: 12),
+          itemBuilder: (context, index) =>
+              _latestRow(context, latest[index]),
+        ),
+      ],
+    );
+  }
+
+  Widget _latestRow(BuildContext context, Post post) {
+    final imageUrl = post.imageUrl;
+    final date = _formatDate(post.createdAt);
+    return InkWell(
+      onTap: () => _openDetail(post),
+      borderRadius: BorderRadius.circular(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              width: 64,
+              height: 64,
+              child: imageUrl != null
+                  ? _coverImage(imageUrl, iconSize: 20)
+                  : _coverPlaceholder(context, iconSize: 24),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  post.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                if (date.isNotEmpty) _dateText(context, date),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -663,32 +741,10 @@ class _HomePageState extends State<HomePage> {
                   width: 96,
                   height: 120,
                   child: imageUrl != null
-                      ? Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: colorScheme.surfaceContainerHighest,
-                              child: const Center(
-                                child: Icon(Icons.image_not_supported),
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          color: colorScheme.surfaceContainerHighest,
-                          child: Center(
-                            child: Icon(
-                              Icons.image_not_supported,
-                              color: colorScheme.outline,
-                            ),
-                          ),
+                      ? _coverImage(imageUrl)
+                      : _coverPlaceholder(
+                          context,
+                          icon: Icons.image_not_supported,
                         ),
                 ),
               ),
@@ -722,13 +778,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const Spacer(),
                         if (date.isNotEmpty)
-                          Text(
-                            date,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.outline,
-                                    ),
-                          ),
+                          _dateText(context, date),
                       ],
                     ),
                     const SizedBox(height: 6),
