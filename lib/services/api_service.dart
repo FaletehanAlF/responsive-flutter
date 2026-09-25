@@ -213,7 +213,7 @@ class ApiService {
       );
     }
 
-    final response = await http.Response.fromStream(await request.send());
+    final response = await http.Response.fromStream(await _client.send(request));
     if (response.statusCode != 201) {
       _fail(response, 'Gagal menambahkan artikel');
     }
@@ -245,7 +245,7 @@ class ApiService {
         ),
       );
 
-      final response = await http.Response.fromStream(await request.send());
+      final response = await http.Response.fromStream(await _client.send(request));
       if (response.statusCode != 200) {
         _fail(response, 'Gagal mengubah artikel');
       }
