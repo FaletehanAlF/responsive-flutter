@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../models/category.dart';
+import '../models/post.dart';
 import '../services/api_service.dart';
 
+/// Halaman kelola kategori: daftar + jumlah artikel, tambah, ubah, hapus.
 class CategoryPage extends StatefulWidget {
   const CategoryPage({super.key});
 
@@ -14,12 +16,13 @@ class _CategoryPageState extends State<CategoryPage> {
   final ApiService apiService = ApiService();
   final TextEditingController nameController = TextEditingController();
 
-  late Future<List<Category>> categories;
+  late Future<({List<Category> categories, Map<int, int> counts})>
+      _dataFuture;
 
   @override
   void initState() {
     super.initState();
-    categories = apiService.getCategories();
+    _load();
   }
 
   @override
@@ -28,9 +31,22 @@ class _CategoryPageState extends State<CategoryPage> {
     super.dispose();
   }
 
-  void _reload() {
+  void _load() {
     setState(() {
-      categories = apiService.getCategories();
+      _dataFuture = (() async {
+        final categories = await apiService.getCategories();
+        List<Post> posts = [];
+        try {
+          posts = await apiService.getPosts();
+        } catch (_) {
+          // Jumlah artikel opsional: daftar kategori tetap tampil.
+        }
+        final counts = <int, int>{};
+        for (final post in posts) {
+          counts[post.categoryId] = (counts[post.categoryId] ?? 0) + 1;
+        }
+        return (categories: categories, counts: counts);
+      })();
     });
   }
 
@@ -46,7 +62,7 @@ class _CategoryPageState extends State<CategoryPage> {
       await apiService.addCategory(nameController.text.trim());
       nameController.clear();
       if (!mounted) return;
-      _reload();
+      _load();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Kategori berhasil ditambahkan')),
       );
@@ -69,7 +85,11 @@ class _CategoryPageState extends State<CategoryPage> {
           content: TextField(
             controller: controller,
             autofocus: true,
-            decoration: const InputDecoration(labelText: 'Nama Kategori'),
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(
+              labelText: 'Nama Kategori',
+              hintText: 'Masukkan nama kategori',
+            ),
           ),
           actions: [
             TextButton(
@@ -89,7 +109,7 @@ class _CategoryPageState extends State<CategoryPage> {
                   if (!dialogContext.mounted) return;
                   Navigator.pop(dialogContext);
                   if (!mounted) return;
-                  _reload();
+                  _load();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Kategori berhasil diubah')),
                   );
@@ -115,9 +135,9 @@ class _CategoryPageState extends State<CategoryPage> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Hapus Kategori'),
+          title: const Text('Hapus kategori?'),
           content: Text(
-            'Apakah kamu yakin ingin menghapus kategori "${category.name}"?',
+            'Kategori "${category.name}" akan dihapus dari daftar.',
           ),
           actions: [
             TextButton(
@@ -142,14 +162,18 @@ class _CategoryPageState extends State<CategoryPage> {
     try {
       await apiService.deleteCategory(category.id);
       if (!mounted) return;
-      _reload();
+      _load();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Kategori berhasil dihapus')),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menghapus kategori: $e')),
+        const SnackBar(
+          content: Text(
+            'Kategori tidak dapat dihapus karena masih digunakan oleh artikel.',
+          ),
+        ),
       );
     }
   }
@@ -164,7 +188,11 @@ class _CategoryPageState extends State<CategoryPage> {
           content: TextField(
             controller: nameController,
             autofocus: true,
-            decoration: const InputDecoration(labelText: 'Nama Kategori'),
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(
+              labelText: 'Nama Kategori',
+              hintText: 'Masukkan nama kategori',
+            ),
           ),
           actions: [
             TextButton(
@@ -190,6 +218,7 @@ class _CategoryPageState extends State<CategoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -203,82 +232,155 @@ class _CategoryPageState extends State<CategoryPage> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth >= 600;
-          double horizontalPadding = 16;
-          if (isDesktop) {
-            horizontalPadding = (constraints.maxWidth - 700) / 2;
-            if (horizontalPadding < 16) horizontalPadding = 16;
-          }
-
-          return Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: horizontalPadding,
-              vertical: 8,
-            ),
-            child: FutureBuilder<List<Category>>(
-              future: categories,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-                final data = snapshot.data ?? [];
-                if (data.isEmpty) {
-                  return const Center(child: Text('Belum ada kategori'));
-                }
-
-                return ListView.separated(
-                  itemCount: data.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final category = data[index];
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 1,
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Theme.of(context)
-                              .colorScheme
-                              .secondaryContainer,
-                          child: Text(
-                            '${index + 1}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSecondaryContainer,
-                            ),
+          final double cap = isDesktop ? 760 : double.infinity;
+          return Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: cap),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Kategori',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Kelola kategori artikel.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.outline,
                           ),
-                        ),
-                        title: Text(
-                          category.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              tooltip: 'Ubah',
-                              onPressed: () => editCategory(category),
-                              icon: const Icon(Icons.edit_outlined),
-                            ),
-                            IconButton(
-                              tooltip: 'Hapus',
-                              onPressed: () => deleteCategory(category),
-                              icon: const Icon(Icons.delete_outline),
-                            ),
-                          ],
-                        ),
+                    ),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: FutureBuilder<
+                          ({
+                            List<Category> categories,
+                            Map<int, int> counts
+                          })>(
+                        future: _dataFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.cloud_off_outlined,
+                                    size: 48,
+                                    color: colorScheme.outline,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text('Error: ${snapshot.error}'),
+                                  const SizedBox(height: 12),
+                                  OutlinedButton.icon(
+                                    onPressed: _load,
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Coba lagi'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          final data = snapshot.data?.categories ?? [];
+                          final counts = snapshot.data?.counts ?? {};
+                          if (data.isEmpty) {
+                            return const Center(
+                              child: Text('Belum ada kategori'),
+                            );
+                          }
+
+                          return ListView.separated(
+                            itemCount: data.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final category = data[index];
+                              final count = counts[category.id] ?? 0;
+                              return Card(
+                                elevation: 0,
+                                color: colorScheme.surfaceContainerLow,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(
+                                    color: colorScheme.outlineVariant,
+                                  ),
+                                ),
+                                child: ListTile(
+                                  leading: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          colorScheme.primaryContainer,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Icon(
+                                      Icons.folder_outlined,
+                                      size: 20,
+                                      color: colorScheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    category.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '$count artikel',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: colorScheme.outline,
+                                        ),
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        tooltip: 'Ubah',
+                                        onPressed: () =>
+                                            editCategory(category),
+                                        icon: const Icon(
+                                          Icons.edit_outlined,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        tooltip: 'Hapus',
+                                        onPressed: () =>
+                                            deleteCategory(category),
+                                        icon: const Icon(
+                                          Icons.delete_outline,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
                       ),
-                    );
-                  },
-                );
-              },
+                    ),
+                  ],
+                ),
+              ),
             ),
           );
         },

@@ -6,6 +6,7 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -14,67 +15,75 @@ class ProfilePage extends StatelessWidget {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth >= 600;
-          double horizontalPadding = 16;
-          if (isDesktop) {
-            horizontalPadding = (constraints.maxWidth - 700) / 2;
-            if (horizontalPadding < 16) horizontalPadding = 16;
-          }
-
+          final double cap = isDesktop ? 760 : double.infinity;
           return SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: horizontalPadding,
-              vertical: 24,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primaryContainer,
-                  child: Icon(
-                    Icons.person_outline,
-                    size: 44,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Pengguna NARATA',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Halaman profil ini merupakan bagian dari aplikasi NARATA '
-                  'untuk identitas pengguna lokal tanpa autentikasi.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 1,
-                  child: const Column(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: cap),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      ListTile(
-                        leading: Icon(Icons.article_outlined),
-                        title: Text('Penulis & Pembaca'),
-                        subtitle: Text('Mengelola artikel blog'),
+                      Container(
+                        padding: const EdgeInsets.all(28),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.person_outline,
+                          size: 52,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
                       ),
-                      Divider(height: 1),
-                      ListTile(
-                        leading: Icon(Icons.devices_outlined),
-                        title: Text('Perangkat ini'),
-                        subtitle: Text('Data tersimpan di server lokal'),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Pengguna NARATA',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Pengelola Artikel',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.outline,
+                            ),
+                      ),
+                      const SizedBox(height: 20),
+                      Card(
+                        elevation: 1,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Column(
+                          children: [
+                            ListTile(
+                              leading: Icon(Icons.badge_outlined),
+                              title: Text('Peran'),
+                              subtitle: Text('Penulis dan pembaca artikel'),
+                            ),
+                            Divider(
+                              height: 1,
+                              indent: 16,
+                              endIndent: 16,
+                            ),
+                            ListTile(
+                              leading: Icon(Icons.devices_outlined),
+                              title: Text('Perangkat'),
+                              subtitle:
+                                  Text('Data tersimpan di server lokal'),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
           );
         },

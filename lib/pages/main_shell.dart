@@ -5,8 +5,11 @@ import 'articles_page.dart';
 import 'home_page.dart';
 import 'settings_page.dart';
 
-/// Navigasi utama NARATA: Home | Articles | Add | Settings.
-/// Menggunakan IndexedStack agar state tiap tab tidak hilang saat berpindah.
+/// Navigasi utama NARATA yang responsif:
+/// - Mobile (< 600px): NavigationBar di bawah.
+/// - Desktop/Web (>= 600px): sidebar kiri (NavigationRail extended 250px).
+/// Menggunakan IndexedStack + state _index yang sama di kedua layout
+/// agar state halaman tidak hilang saat berpindah menu.
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -37,25 +40,44 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
+  void _select(int value) {
+    setState(() {
+      _index = value;
+    });
+  }
+
+  IndexedStack _buildStack() {
+    return IndexedStack(
+      index: _index,
+      children: [
+        HomePage(refreshSignal: _dataVersion),
+        ArticlesPage(refreshSignal: _dataVersion),
+        AddPostPage(onSaved: _handleAddSaved),
+        SettingsPage(onDataChanged: _notifyDataChanged),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isDesktop = constraints.maxWidth >= 600;
+        if (isDesktop) {
+          return _buildDesktop();
+        }
+        return _buildMobile();
+      },
+    );
+  }
+
+  /// Layout mobile: konten penuh + NavigationBar bawah.
+  Widget _buildMobile() {
     return Scaffold(
-      body: IndexedStack(
-        index: _index,
-        children: [
-          HomePage(refreshSignal: _dataVersion),
-          ArticlesPage(refreshSignal: _dataVersion),
-          AddPostPage(onSaved: _handleAddSaved),
-          SettingsPage(onDataChanged: _notifyDataChanged),
-        ],
-      ),
+      body: _buildStack(),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (value) {
-          setState(() {
-            _index = value;
-          });
-        },
+        onDestinationSelected: _select,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
@@ -65,18 +87,121 @@ class _MainShellState extends State<MainShell> {
           NavigationDestination(
             icon: Icon(Icons.article_outlined),
             selectedIcon: Icon(Icons.article),
-            label: 'Articles',
+            label: 'Artikel',
           ),
           NavigationDestination(
             icon: Icon(Icons.add),
             selectedIcon: Icon(Icons.add),
-            label: 'Add',
+            label: 'Tambah',
           ),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),
             selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
+            label: 'Pengaturan',
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Layout desktop/web: sidebar kiri 250px + konten di kanan.
+  /// Setiap halaman membatasi kontennya sendiri sehingga area kanan
+  /// tidak melebar penuh.
+  Widget _buildDesktop() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          NavigationRail(
+            extended: true,
+            minExtendedWidth: 250,
+            selectedIndex: _index,
+            onDestinationSelected: _select,
+            groupAlignment: -1.0,
+            backgroundColor: colorScheme.surface,
+            indicatorColor: colorScheme.primaryContainer,
+            selectedIconTheme: IconThemeData(color: colorScheme.primary),
+            selectedLabelTextStyle: TextStyle(
+              color: colorScheme.primary,
+              fontWeight: FontWeight.w700,
+            ),
+            leading: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'NARATA',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 20,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Blog Management',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.outline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            trailing: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 16, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Blog Management',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.outline,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'v1.0.0',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: colorScheme.outline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            destinations: const [
+              NavigationRailDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home),
+                label: Text('Home'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.article_outlined),
+                selectedIcon: Icon(Icons.article),
+                label: Text('Artikel'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.add),
+                selectedIcon: Icon(Icons.add),
+                label: Text('Tambah Artikel'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.settings_outlined),
+                selectedIcon: Icon(Icons.settings),
+                label: Text('Pengaturan'),
+              ),
+            ],
+          ),
+          const VerticalDivider(width: 1, thickness: 1),
+          Expanded(child: _buildStack()),
         ],
       ),
     );

@@ -6,6 +6,7 @@ class NotificationPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -14,40 +15,44 @@ class NotificationPage extends StatelessWidget {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth >= 600;
-          double horizontalPadding = 16;
-          if (isDesktop) {
-            horizontalPadding = (constraints.maxWidth - 700) / 2;
-            if (horizontalPadding < 16) horizontalPadding = 16;
-          }
-
-          return SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: horizontalPadding,
-              vertical: 24,
-            ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.notifications_outlined,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Belum ada notifikasi',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Notifikasi artikel baru akan muncul di sini.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
+          final double cap = isDesktop ? 760 : double.infinity;
+          return Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: cap),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerLow,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.notifications_outlined,
+                        size: 48,
+                        color: colorScheme.outline,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Belum ada notifikasi',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Notifikasi baru akan muncul di sini.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: colorScheme.outline,
+                          ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );

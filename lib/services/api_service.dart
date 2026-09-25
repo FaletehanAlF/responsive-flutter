@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
@@ -63,16 +62,7 @@ class ApiService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
 
-      final posts =
-          (data['data'] as List).map((item) => Post.fromJson(item)).toList();
-      // Diagnosis sementara: lihat nilai image dari API per artikel.
-      for (final post in posts) {
-        debugPrint(
-          'POST DATA: id=${post.id} title=${post.title} '
-          'image=${post.image} imageUrl=${post.imageUrl}',
-        );
-      }
-      return posts;
+      return (data['data'] as List).map((item) => Post.fromJson(item)).toList();
     } else {
       throw Exception('Gagal mengambil artikel');
     }
@@ -84,13 +74,7 @@ class ApiService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
 
-      final post = Post.fromJson(data['data']);
-      // Diagnosis sementara: lihat nilai image dari API untuk detail.
-      debugPrint(
-        'POST DETAIL: id=${post.id} title=${post.title} '
-        'image=${post.image} imageUrl=${post.imageUrl}',
-      );
-      return post;
+      return Post.fromJson(data['data']);
     } else {
       throw Exception('Gagal mengambil detail artikel');
     }
