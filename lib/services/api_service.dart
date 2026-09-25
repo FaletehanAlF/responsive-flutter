@@ -126,7 +126,7 @@ class ApiService {
   }
 
   Future<List<Category>> getCategories() async {
-    final response = await http.get(Uri.parse('$baseUrl/categories'));
+    final response = await _client.get(_uri('/categories'));
     final data = _decodeList(response, 'Gagal mengambil kategori');
     return data
         .map((item) => Category.fromJson((item as Map).cast<String, dynamic>()))
@@ -134,8 +134,8 @@ class ApiService {
   }
 
   Future<void> addCategory(String name) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/categories'),
+    final response = await _client.post(
+      _uri('/categories'),
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({'name': name}),
     );
@@ -146,8 +146,8 @@ class ApiService {
   }
 
   Future<void> updateCategory(int id, String name) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/categories/$id'),
+    final response = await _client.put(
+      _uri('/categories/$id'),
       headers: const {'Content-Type': 'application/json'},
       body: jsonEncode({'name': name}),
     );
@@ -158,7 +158,7 @@ class ApiService {
   }
 
   Future<void> deleteCategory(int id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/categories/$id'));
+    final response = await _client.delete(_uri('/categories/$id'));
 
     if (response.statusCode != 200) {
       _fail(response, 'Gagal menghapus kategori');
