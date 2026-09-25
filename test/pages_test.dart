@@ -273,7 +273,7 @@ void main() {
           );
         }
         return http.Response(
-          jsonEncode({'success': true, 'data': _posts().first}),
+          jsonEncode({'success': true, 'data': _posts().last}),
           200,
         );
       });
