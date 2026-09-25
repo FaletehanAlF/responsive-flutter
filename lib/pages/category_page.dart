@@ -58,7 +58,9 @@ class _CategoryPageState extends State<CategoryPage> {
 
   void _load() {
     final next = _fetchData();
-    setState(() => _dataFuture = next);
+    setState(() {
+      _dataFuture = next;
+    });
   }
 
   Future<void> _showCategoryDialog({Category? existing}) async {
