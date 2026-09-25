@@ -7,8 +7,9 @@ import 'edit_post_page.dart';
 
 class DetailPage extends StatefulWidget {
   final int postId;
+  final void Function(bool changed)? onClose;
 
-  const DetailPage({super.key, required this.postId});
+  const DetailPage({super.key, required this.postId, this.onClose});
 
   @override
   State<DetailPage> createState() => _DetailPageState();
@@ -31,7 +32,7 @@ class _DetailPageState extends State<DetailPage> {
     });
   }
 
-  String _formatDate(String raw) {
+  String _date(String raw) {
     final value = raw.trim();
     if (value.isEmpty) return '';
     final parsed = DateTime.tryParse(value);
@@ -39,39 +40,22 @@ class _DetailPageState extends State<DetailPage> {
     return DateFormat('d MMM yyyy', 'id').format(parsed);
   }
 
-  Widget _heroImage(
-    BuildContext context,
-    String imageUrl, {
-    required bool fullBleed,
-  }) {
-    final image = Image.network(
-      imageUrl,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return const Center(child: CircularProgressIndicator());
-      },
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: const Center(
-            child: Icon(Icons.image_not_supported, size: 48),
-          ),
-        );
-      },
-    );
-    if (fullBleed) {
-      return SizedBox(
-        height: 260,
-        width: double.infinity,
-        child: image,
-      );
+  void _close(bool changed) {
+    if (widget.onClose != null) {
+      widget.onClose!(changed);
+    } else {
+      Navigator.pop(context, changed);
     }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: SizedBox(height: 340, width: double.infinity, child: image),
+  }
+
+  Future<void> _openEdit(Post post) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditPostPage(post: post),
+      ),
     );
+    if (result == true && mounted) _reload();
   }
 
   Future<void> _confirmDelete(Post post) async {
@@ -110,7 +94,7 @@ class _DetailPageState extends State<DetailPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Artikel berhasil dihapus')),
       );
-      Navigator.pop(context, true);
+      _close(true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -133,7 +117,12 @@ class _DetailPageState extends State<DetailPage> {
 
         if (snapshot.hasError) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Detail Artikel')),
+            appBar: AppBar(
+              leading: widget.onClose == null
+                  ? null
+                  : BackButton(onPressed: () => _close(false)),
+              title: const Text('Detail Artikel'),
+            ),
             body: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -149,7 +138,7 @@ class _DetailPageState extends State<DetailPage> {
                   OutlinedButton.icon(
                     onPressed: _reload,
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Coba lagi'),
+                    label: const Text('Coba Lagi'),
                   ),
                 ],
               ),
@@ -165,143 +154,157 @@ class _DetailPageState extends State<DetailPage> {
 
         final post = snapshot.data!;
         final imageUrl = post.imageUrl;
-        final date = _formatDate(post.createdAt);
+        final date = _date(post.createdAt);
 
         return Scaffold(
           appBar: AppBar(
+            leading: widget.onClose == null
+                ? null
+                : BackButton(onPressed: () => _close(false)),
             title: Text(
               post.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                tooltip: 'Edit Artikel',
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EditPostPage(post: post),
-                    ),
-                  );
-                  if (result == true && context.mounted) _reload();
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline),
-                tooltip: 'Hapus Artikel',
-                onPressed: () => _confirmDelete(post),
-              ),
-            ],
           ),
           body: LayoutBuilder(
             builder: (context, constraints) {
-              final bool isDesktop = constraints.maxWidth >= 600;
-              final double cap = isDesktop ? 760 : double.infinity;
+              final bool desktop = constraints.maxWidth >= 600;
               return SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (imageUrl != null && !isDesktop)
-                      _heroImage(context, imageUrl, fullBleed: true),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: cap),
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  crossAxisAlignment:
-                                      WrapCrossAlignment.center,
-                                  children: [
-                                    Container(
-                                      padding:
-                                          const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: colorScheme.primary,
-                                        borderRadius:
-                                            BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        post.categoryName.toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.6,
-                                          color: colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: desktop ? 900 : double.infinity,
+                    ),
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (imageUrl != null)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: AspectRatio(
+                                aspectRatio: 16 / 9,
+                                child: Image.network(
+                                  imageUrl,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  loadingBuilder:
+                                      (context, child, progress) {
+                                    if (progress == null) return child;
+                                    return const Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  },
+                                  errorBuilder:
+                                      (context, error, stackTrace) {
+                                    return Container(
+                                      color: colorScheme
+                                          .surfaceContainerHighest,
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.image_not_supported,
+                                          size: 48,
                                         ),
                                       ),
-                                    ),
-                                    if (date.isNotEmpty)
-                                      Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.calendar_today,
-                                            size: 13,
-                                            color: colorScheme.outline,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            date,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color:
-                                                      colorScheme.outline,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                  ],
+                                    );
+                                  },
                                 ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  post.title,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineSmall
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        height: 1.25,
-                                      ),
-                                ),
-                                if (imageUrl != null && isDesktop) ...[
-                                  const SizedBox(height: 16),
-                                  _heroImage(
-                                    context,
-                                    imageUrl,
-                                    fullBleed: false,
-                                  ),
-                                ],
-                                const SizedBox(height: 20),
-                                Text(
-                                  post.content,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.copyWith(height: 1.7),
-                                ),
-                                const SizedBox(height: 8),
-                              ],
+                              ),
                             ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Text(
+                                post.categoryName.toUpperCase(),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: colorScheme.primary,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.6,
+                                    ),
+                              ),
+                              if (date.isNotEmpty) ...[
+                                Text(
+                                  ' • ',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium
+                                      ?.copyWith(
+                                        color: colorScheme.outline,
+                                      ),
+                                ),
+                                Text(
+                                  date,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium
+                                      ?.copyWith(
+                                        color: colorScheme.outline,
+                                      ),
+                                ),
+                              ],
+                            ],
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                          Text(
+                            post.title,
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.25,
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            post.content,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyLarge
+                                ?.copyWith(height: 1.7),
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () => _openEdit(post),
+                                  icon: const Icon(
+                                    Icons.edit_outlined,
+                                    size: 18,
+                                  ),
+                                  label: const Text('Edit Artikel'),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () =>
+                                      _confirmDelete(post),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    size: 18,
+                                  ),
+                                  label: const Text('Hapus Artikel'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: colorScheme.error,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               );
             },
