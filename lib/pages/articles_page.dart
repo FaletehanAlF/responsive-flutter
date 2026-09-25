@@ -280,6 +280,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
                               itemBuilder: (context, index) =>
                                   _listCard(context, filtered[index]),
                             );
+                            }
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [

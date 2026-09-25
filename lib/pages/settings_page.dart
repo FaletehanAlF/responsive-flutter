@@ -55,13 +55,13 @@ class SettingsPage extends StatelessWidget {
           final bool desktop = constraints.maxWidth >= 600;
           return SingleChildScrollView(
             padding: EdgeInsets.symmetric(
-              horizontal: desktop ? 32 : 16,
-              vertical: desktop ? 28 : 20,
+              horizontal: desktop ? 24 : 16,
+              vertical: 20,
             ),
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  maxWidth: desktop ? 960 : double.infinity,
+                  maxWidth: desktop ? 760 : double.infinity,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -19,7 +19,7 @@ class ProfilePage extends StatelessWidget {
           final bool isDesktop = constraints.maxWidth >= 600;
           final double cap = isDesktop ? 760 : double.infinity;
           return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 24),
+            padding: const EdgeInsets.symmetric(vertical: 20),
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: cap),

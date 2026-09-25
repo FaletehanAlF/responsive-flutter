@@ -115,7 +115,7 @@ class _MainShellState extends State<MainShell> {
           NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
-            label: 'Home',
+            label: 'Beranda',
           ),
           NavigationDestination(
             icon: Icon(Icons.article_outlined),
@@ -211,7 +211,7 @@ class _MainShellState extends State<MainShell> {
               NavigationRailDestination(
                 icon: Icon(Icons.home_outlined),
                 selectedIcon: Icon(Icons.home),
-                label: Text('Home'),
+                label: Text('Beranda'),
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.article_outlined),
