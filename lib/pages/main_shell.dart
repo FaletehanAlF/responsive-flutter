@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'add_post_page.dart';
 import 'articles_page.dart';
+import 'detail_page.dart';
 import 'home_page.dart';
 import 'settings_page.dart';
 
@@ -16,6 +17,8 @@ class _MainShellState extends State<MainShell> {
   int _index = 0;
 
   int _dataVersion = 0;
+
+  int? _detailPostId;
 
   void _notifyDataChanged() {
     setState(() {
@@ -36,37 +39,75 @@ class _MainShellState extends State<MainShell> {
   void _select(int value) {
     setState(() {
       _index = value;
+      _detailPostId = null;
     });
+  }
+
+  void _openDetail(int id) {
+    setState(() {
+      _detailPostId = id;
+    });
+  }
+
+  void _closeDetail(bool changed) {
+    if (_detailPostId == null) return;
+    setState(() {
+      _detailPostId = null;
+    });
+    if (changed) _notifyDataChanged();
   }
 
   IndexedStack _buildStack() {
     return IndexedStack(
       index: _index,
       children: [
-        HomePage(refreshSignal: _dataVersion),
-        ArticlesPage(refreshSignal: _dataVersion),
+        HomePage(
+          refreshSignal: _dataVersion,
+          onOpenDetail: _openDetail,
+        ),
+        ArticlesPage(
+          refreshSignal: _dataVersion,
+          onOpenDetail: _openDetail,
+        ),
         AddPostPage(onSaved: _handleAddSaved),
         SettingsPage(onDataChanged: _notifyDataChanged),
       ],
     );
   }
 
+  Widget _buildBody() {
+    final detailId = _detailPostId;
+    if (detailId != null) {
+      return DetailPage(
+        postId: detailId,
+        onClose: _closeDetail,
+      );
+    }
+    return _buildStack();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final bool isDesktop = constraints.maxWidth >= 600;
-        if (isDesktop) {
-          return _buildDesktop();
-        }
-        return _buildMobile();
+    return PopScope(
+      canPop: _detailPostId == null,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _closeDetail(false);
       },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool isDesktop = constraints.maxWidth >= 600;
+          if (isDesktop) {
+            return _buildDesktop();
+          }
+          return _buildMobile();
+        },
+      ),
     );
   }
 
   Widget _buildMobile() {
     return Scaffold(
-      body: _buildStack(),
+      body: _buildBody(),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: _select,
