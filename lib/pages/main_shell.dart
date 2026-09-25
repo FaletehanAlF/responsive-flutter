@@ -231,7 +231,7 @@ class _MainShellState extends State<MainShell> {
             ],
           ),
           const VerticalDivider(width: 1, thickness: 1),
-          Expanded(child: _buildStack()),
+          Expanded(child: _buildBody()),
         ],
       ),
     );
