@@ -4,9 +4,8 @@ import 'package:intl/intl.dart';
 import '../models/category.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../widgets/narata_app_bar.dart';
 import 'detail_page.dart';
-import 'notification_page.dart';
-import 'profile_page.dart';
 
 class HomePage extends StatefulWidget {
   final int refreshSignal;
@@ -75,36 +74,11 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        leading: IconButton(
-          tooltip: 'Notifikasi',
-          icon: const Icon(Icons.notifications_outlined),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const NotificationPage(),
-              ),
-            );
-          },
-        ),
-        title: const Text(
+      appBar: const NarataAppBar(
+        title: Text(
           'NARATA',
           style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 1.2),
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Profil',
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ProfilePage()),
-              );
-            },
-          ),
-        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
