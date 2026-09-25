@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 
 import '../models/post.dart';
 import '../models/category.dart';
@@ -82,18 +83,28 @@ class ApiService {
     required String title,
     required String content,
     required int categoryId,
-    String? image,
+    XFile? image,
   }) async {
-    final response = await http.post(
+    final request = http.MultipartRequest(
+      'POST',
       Uri.parse('$baseUrl/posts'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'title': title,
-        'content': content,
-        'image': image,
-        'category_id': categoryId,
-      }),
     );
+
+    request.fields['title'] = title;
+    request.fields['content'] = content;
+    request.fields['category_id'] = categoryId.toString();
+
+    if (image != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'image',
+          image.path,
+        ),
+      );
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode != 201) {
       throw Exception('Gagal menambahkan artikel');
