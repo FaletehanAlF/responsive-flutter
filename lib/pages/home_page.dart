@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/category.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../widgets/category_badge.dart';
 import '../widgets/narata_app_bar.dart';
 import 'detail_page.dart';
 
@@ -200,7 +201,7 @@ class _HomePageState extends State<HomePage> {
                                     const SizedBox(height: 12),
                                     OutlinedButton(
                                       onPressed: _load,
-                                      child: const Text('Coba Lagi'),
+                                      child: const Text('Coba lagi'),
                                     ),
                                   ],
                                 ),
@@ -344,16 +345,7 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    post.categoryName.toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                        ),
-                  ),
+                  CategoryBadge(label: post.categoryName),
                   const SizedBox(height: 4),
                   Text(
                     post.title,
