@@ -244,46 +244,13 @@ class _HomePageState extends State<HomePage> {
     final date = formatPostDate(post.createdAt);
     final isGrid = fixedImageHeight != null;
 
-    final Widget? cover = imageUrl == null
-        ? null
-        : maxImageHeight == null
-            ? Image.network(
-                imageUrl,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return const Center(child: CircularProgressIndicator());
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: colorScheme.surfaceContainerHighest,
-                    child: const Center(
-                      child: Icon(Icons.image_not_supported, size: 40),
-                    ),
-                  );
-                },
-              )
-            : ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: maxImageHeight),
-                child: Image.network(
-                  imageUrl,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const Center(child: CircularProgressIndicator());
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: colorScheme.surfaceContainerHighest,
-                      child: const Center(
-                        child: Icon(Icons.image_not_supported, size: 40),
-                      ),
-                    );
-                  },
-                ),
-              );
+    final cover = _buildCover(
+      context,
+      imageUrl,
+      colorScheme,
+      fixedHeight: fixedImageHeight,
+      maxHeight: maxImageHeight,
+    );
 
     Widget body = Padding(
       padding: const EdgeInsets.all(12),
@@ -332,11 +299,6 @@ class _HomePageState extends State<HomePage> {
 
     if (isGrid) {
       body = Expanded(child: body);
-    } else if (maxImageHeight != null && cover != null) {
-      cover = ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxImageHeight),
-        child: cover,
-      );
     }
 
     return Card(
@@ -357,6 +319,45 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  Widget? _buildCover(
+    BuildContext context,
+    String? imageUrl,
+    ColorScheme colorScheme, {
+    double? fixedHeight,
+    double? maxHeight,
+  }) {
+    if (imageUrl == null) return null;
+
+    final image = Image.network(
+      imageUrl,
+      width: double.infinity,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return const Center(child: CircularProgressIndicator());
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: colorScheme.surfaceContainerHighest,
+          child: const Center(
+            child: Icon(Icons.image_not_supported, size: 40),
+          ),
+        );
+      },
+    );
+
+    if (fixedHeight != null) {
+      return SizedBox(height: fixedHeight, child: image);
+    }
+    if (maxHeight != null) {
+      return ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        child: image,
+      );
+    }
+    return image;
   }
 }
 
