@@ -231,18 +231,6 @@ class _DetailPageState extends State<DetailPage> {
                           color: NewsColors.subtitle,
                         ),
                       ),
-                      // Penanda eksplisit untuk test 404.
-                      if (isNotFound)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 2),
-                          child: Text(
-                            'Artikel tidak ditemukan',
-                            style: TextStyle(
-                              fontSize: 1,
-                              color: Colors.transparent,
-                            ),
-                          ),
-                        ),
                       const SizedBox(height: 12),
                       Row(
                         mainAxisSize: MainAxisSize.min,

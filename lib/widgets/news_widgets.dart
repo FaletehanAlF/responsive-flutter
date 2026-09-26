@@ -351,13 +351,15 @@ class NewsListTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      post.categoryName,
+                      post.categoryName.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      softWrap: false,
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 11.5,
                         color: NewsColors.muted,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.4,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -378,11 +380,13 @@ class NewsListTile extends StatelessWidget {
                       children: [
                         _MiniAvatar(name: post.categoryName, size: 20),
                         const SizedBox(width: 7),
-                        Expanded(
+                        Flexible(
+                          flex: 3,
                           child: Text(
-                            post.categoryName,
+                            'Oleh ${post.categoryName}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
+                            softWrap: false,
                             style: const TextStyle(
                               fontSize: 12.5,
                               color: Color(0xFF6B7280),
@@ -391,20 +395,27 @@ class NewsListTile extends StatelessWidget {
                           ),
                         ),
                         if (date.isNotEmpty) ...[
-                          const Text(
-                            ' •  ',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF9AA0A6),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4),
+                            child: Text(
+                              '•',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF9AA0A6),
+                              ),
                             ),
                           ),
-                          Text(
-                            date,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              color: Color(0xFF9AA0A6),
+                          Flexible(
+                            flex: 2,
+                            child: Text(
+                              date,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              softWrap: false,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF9AA0A6),
+                              ),
                             ),
                           ),
                         ],

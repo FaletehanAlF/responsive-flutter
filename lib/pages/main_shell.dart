@@ -138,7 +138,7 @@ class _MainShellState extends State<MainShell> {
               indicatorColor: NewsColors.primary,
               height: 68,
               labelBehavior:
-                  NavigationDestinationLabelBehavior.onlyShowSelected,
+                  NavigationDestinationLabelBehavior.alwaysShow,
               selectedIndex: _index,
               onDestinationSelected: _select,
               destinations: const [
