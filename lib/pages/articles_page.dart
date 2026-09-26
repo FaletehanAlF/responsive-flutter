@@ -272,7 +272,7 @@ class _ArticlesPageState extends State<ArticlesPage> {
                                     physics:
                                         const NeverScrollableScrollPhysics(),
                                     itemCount: filtered.length,
-                                    separatorBuilder: (_, __) =>
+                                    separatorBuilder: (_, _) =>
                                         const Divider(
                                       height: 1,
                                       thickness: 0.6,

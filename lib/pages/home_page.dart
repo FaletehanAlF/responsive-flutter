@@ -341,7 +341,7 @@ class _HomePageState extends State<HomePage> {
                                 physics:
                                     const NeverScrollableScrollPhysics(),
                                 itemCount: posts.length,
-                                separatorBuilder: (_, __) =>
+                                separatorBuilder: (_, _) =>
                                     const Divider(
                                   height: 1,
                                   thickness: 0.6,
