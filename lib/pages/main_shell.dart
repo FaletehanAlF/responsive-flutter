@@ -76,7 +76,6 @@ class _MainShellState extends State<MainShell> {
           refreshSignal: _dataVersion,
           onOpenDetail: _openDetail,
           onViewAll: _goToArticles,
-          onSearchTap: _goToArticles,
         ),
         ArticlesPage(
           refreshSignal: _dataVersion,
@@ -161,12 +160,13 @@ class _MainShellState extends State<MainShell> {
                 ),
                 NavigationDestination(
                   icon: Icon(
-                    Icons.settings_outlined,
+                    Icons.settings,
                     color: Color(0xFF9AA0A6),
                   ),
-                  // Ikon gir beda dari profil & tetap sama saat diklik.
+                  // Gir terisi penuh, beda dari ikon profil & tetap sama
+                  // saat diklik (hanya warna menyesuaikan pil indikator).
                   selectedIcon: Icon(
-                    Icons.settings_outlined,
+                    Icons.settings,
                     color: Colors.white,
                   ),
                   label: 'Pengaturan',
@@ -233,8 +233,8 @@ class _MainShellState extends State<MainShell> {
                 label: Text('Tambah Artikel'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings_outlined),
+                icon: Icon(Icons.settings),
+                selectedIcon: Icon(Icons.settings),
                 label: Text('Pengaturan'),
               ),
             ],

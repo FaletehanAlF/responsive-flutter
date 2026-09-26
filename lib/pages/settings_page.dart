@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/news_widgets.dart';
-import 'articles_page.dart';
 import 'category_page.dart';
 import 'profile_page.dart';
 
@@ -69,10 +68,6 @@ class SettingsPage extends StatelessWidget {
         onProfile: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ProfilePage()),
-        ),
-        onSearch: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ArticlesPage()),
         ),
       ),
       body: LayoutBuilder(

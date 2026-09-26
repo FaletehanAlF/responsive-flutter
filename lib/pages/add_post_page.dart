@@ -7,7 +7,6 @@ import '../models/category.dart';
 import '../services/api_service.dart';
 import '../utils/news_theme.dart';
 import '../widgets/news_widgets.dart';
-import 'articles_page.dart';
 import 'profile_page.dart';
 
 class AddPostPage extends StatefulWidget {
@@ -177,10 +176,6 @@ class _AddPostPageState extends State<AddPostPage> {
         onProfile: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ProfilePage()),
-        ),
-        onSearch: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ArticlesPage()),
         ),
       ),
       body: LayoutBuilder(

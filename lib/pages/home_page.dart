@@ -12,7 +12,6 @@ class HomePage extends StatefulWidget {
   final int refreshSignal;
   final ValueChanged<int>? onOpenDetail;
   final VoidCallback? onViewAll;
-  final VoidCallback? onSearchTap;
   final ApiService? apiService;
 
   const HomePage({
@@ -20,7 +19,6 @@ class HomePage extends StatefulWidget {
     this.refreshSignal = 0,
     this.onOpenDetail,
     this.onViewAll,
-    this.onSearchTap,
     this.apiService,
   });
 
@@ -113,7 +111,6 @@ class _HomePageState extends State<HomePage> {
       // App bar konsisten di semua halaman (kecuali Articles).
       appBar: NewsAppBar(
         onProfile: _openProfile,
-        onSearch: widget.onSearchTap ?? widget.onViewAll,
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

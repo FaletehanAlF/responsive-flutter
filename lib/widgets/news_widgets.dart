@@ -10,7 +10,6 @@ import '../utils/news_theme.dart';
 ///
 /// - [title] null → tanpa judul (gaya home sesuai referensi).
 /// - [showBack] true → lingkaran back; false → lingkaran profil.
-/// - [onSearch] null → tombol search disembunyikan.
 /// - Ikon bell hanya hiasan (tidak bisa diklik / tidak pindah halaman).
 /// - [trailingActions] → tombol lingkaran tambahan (mis. bookmark/more).
 class NewsAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -18,7 +17,6 @@ class NewsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showBack;
   final VoidCallback? onBack;
   final VoidCallback? onProfile;
-  final VoidCallback? onSearch;
   final List<Widget>? trailingActions;
 
   const NewsAppBar({
@@ -27,7 +25,6 @@ class NewsAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.showBack = false,
     this.onBack,
     this.onProfile,
-    this.onSearch,
     this.trailingActions,
   });
 
@@ -37,7 +34,6 @@ class NewsAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final extra = trailingActions ?? const <Widget>[];
-    final hasTrailing = extra.isNotEmpty || onSearch != null;
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -81,13 +77,7 @@ class NewsAppBar extends StatelessWidget implements PreferredSizeWidget {
               if (i > 0) const SizedBox(width: 10),
               extra[i],
             ],
-            if (extra.isNotEmpty && onSearch != null)
-              const SizedBox(width: 10),
-            if (onSearch != null) ...[
-              CircleIconButton(icon: Icons.search, onTap: onSearch),
-              const SizedBox(width: 10),
-            ] else if (hasTrailing)
-              const SizedBox(width: 10),
+            if (extra.isNotEmpty) const SizedBox(width: 10),
             // Bell hanya tampilan (display only) — tidak pindah halaman.
             const CircleIconButton(
               icon: Icons.notifications_outlined,
