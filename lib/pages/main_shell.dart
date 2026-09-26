@@ -156,8 +156,10 @@ class _MainShellState extends State<MainShell> {
                 NavigationDestination(
                   icon:
                       Icon(Icons.bookmark_border, color: Color(0xFF9AA0A6)),
+                  // Ikon disamakan agar tidak berubah saat diklik/aktif,
+                  // hanya warnanya yang menyesuaikan pil indikator.
                   selectedIcon:
-                      Icon(Icons.add_circle, color: Colors.white),
+                      Icon(Icons.bookmark_border, color: Colors.white),
                   label: 'Tambah',
                 ),
                 NavigationDestination(
@@ -224,7 +226,7 @@ class _MainShellState extends State<MainShell> {
               ),
               NavigationRailDestination(
                 icon: Icon(Icons.add_circle_outline),
-                selectedIcon: Icon(Icons.add_circle),
+                selectedIcon: Icon(Icons.add_circle_outline),
                 label: Text('Tambah Artikel'),
               ),
               NavigationRailDestination(
