@@ -154,20 +154,21 @@ class _MainShellState extends State<MainShell> {
                   label: 'Artikel',
                 ),
                 NavigationDestination(
-                  icon:
-                      Icon(Icons.bookmark_border, color: Color(0xFF9AA0A6)),
-                  // Ikon disamakan agar tidak berubah saat diklik/aktif,
-                  // hanya warnanya yang menyesuaikan pil indikator.
-                  selectedIcon:
-                      Icon(Icons.bookmark_border, color: Colors.white),
+                  icon: Icon(Icons.add, color: Color(0xFF9AA0A6)),
+                  // Ikon + tetap sama saat diklik, hanya warna menyesuaikan.
+                  selectedIcon: Icon(Icons.add, color: Colors.white),
                   label: 'Tambah',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.person_outline, color: Color(0xFF9AA0A6)),
-                  // Langsung ikon profil — tidak berubah jadi gir saat diklik,
-                  // hanya warnanya yang menyesuaikan pil indikator.
-                  selectedIcon:
-                      Icon(Icons.person_outline, color: Colors.white),
+                  icon: Icon(
+                    Icons.settings_outlined,
+                    color: Color(0xFF9AA0A6),
+                  ),
+                  // Ikon gir beda dari profil & tetap sama saat diklik.
+                  selectedIcon: Icon(
+                    Icons.settings_outlined,
+                    color: Colors.white,
+                  ),
                   label: 'Pengaturan',
                 ),
               ],
@@ -227,13 +228,13 @@ class _MainShellState extends State<MainShell> {
                 label: Text('Artikel'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.add_circle_outline),
-                selectedIcon: Icon(Icons.add_circle_outline),
+                icon: Icon(Icons.add),
+                selectedIcon: Icon(Icons.add),
                 label: Text('Tambah Artikel'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person_outline),
+                icon: Icon(Icons.settings_outlined),
+                selectedIcon: Icon(Icons.settings_outlined),
                 label: Text('Pengaturan'),
               ),
             ],

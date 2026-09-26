@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/news_widgets.dart';
 import 'articles_page.dart';
 import 'category_page.dart';
-import 'notification_page.dart';
+import 'profile_page.dart';
 
 const String kAppVersion = '1.0.0';
 
@@ -66,13 +66,13 @@ class SettingsPage extends StatelessWidget {
     return Scaffold(
       appBar: NewsAppBar(
         title: 'Pengaturan',
+        onProfile: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfilePage()),
+        ),
         onSearch: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ArticlesPage()),
-        ),
-        onNotification: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const NotificationPage()),
         ),
       ),
       body: LayoutBuilder(

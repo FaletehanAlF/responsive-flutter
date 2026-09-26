@@ -9,16 +9,16 @@ import '../utils/news_theme.dart';
 /// Pengecualian: halaman Articles (Discover) tidak memakai app bar.
 ///
 /// - [title] null → tanpa judul (gaya home sesuai referensi).
-/// - [showBack] true → lingkaran back; false → lingkaran menu.
-/// - [onSearch]/[onNotification] null → tombolnya disembunyikan.
+/// - [showBack] true → lingkaran back; false → lingkaran profil.
+/// - [onSearch] null → tombol search disembunyikan.
+/// - Ikon bell hanya hiasan (tidak bisa diklik / tidak pindah halaman).
 /// - [trailingActions] → tombol lingkaran tambahan (mis. bookmark/more).
 class NewsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? title;
   final bool showBack;
   final VoidCallback? onBack;
-  final VoidCallback? onMenu;
+  final VoidCallback? onProfile;
   final VoidCallback? onSearch;
-  final VoidCallback? onNotification;
   final List<Widget>? trailingActions;
 
   const NewsAppBar({
@@ -26,27 +26,18 @@ class NewsAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.title,
     this.showBack = false,
     this.onBack,
-    this.onMenu,
+    this.onProfile,
     this.onSearch,
-    this.onNotification,
     this.trailingActions,
   });
 
   @override
   Size get preferredSize => const Size.fromHeight(64);
 
-  void _menuHint(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Menu segera hadir'),
-        duration: Duration(seconds: 1),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final extra = trailingActions ?? const <Widget>[];
+    final hasTrailing = extra.isNotEmpty || onSearch != null;
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -67,8 +58,8 @@ class NewsAppBar extends StatelessWidget implements PreferredSizeWidget {
               )
             else
               CircleIconButton(
-                icon: Icons.menu,
-                onTap: onMenu ?? () => _menuHint(context),
+                icon: Icons.person,
+                onTap: onProfile,
               ),
             Expanded(
               child: title == null
@@ -90,19 +81,18 @@ class NewsAppBar extends StatelessWidget implements PreferredSizeWidget {
               if (i > 0) const SizedBox(width: 10),
               extra[i],
             ],
-            if (extra.isNotEmpty &&
-                (onSearch != null || onNotification != null))
+            if (extra.isNotEmpty && onSearch != null)
               const SizedBox(width: 10),
             if (onSearch != null) ...[
               CircleIconButton(icon: Icons.search, onTap: onSearch),
-              if (onNotification != null) const SizedBox(width: 10),
-            ],
-            if (onNotification != null)
-              CircleIconButton(
-                icon: Icons.notifications_outlined,
-                showDot: true,
-                onTap: onNotification,
-              ),
+              const SizedBox(width: 10),
+            ] else if (hasTrailing)
+              const SizedBox(width: 10),
+            // Bell hanya tampilan (display only) — tidak pindah halaman.
+            const CircleIconButton(
+              icon: Icons.notifications_outlined,
+              showDot: true,
+            ),
           ],
         ),
       ),

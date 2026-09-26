@@ -7,7 +7,7 @@ import '../models/category.dart';
 import '../services/api_service.dart';
 import '../widgets/news_widgets.dart';
 import 'articles_page.dart';
-import 'notification_page.dart';
+import 'profile_page.dart';
 
 class AddPostPage extends StatefulWidget {
   final VoidCallback? onSaved;
@@ -173,13 +173,13 @@ class _AddPostPageState extends State<AddPostPage> {
       appBar: NewsAppBar(
         title: 'Tambah Artikel',
         showBack: widget.onSaved == null,
+        onProfile: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfilePage()),
+        ),
         onSearch: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ArticlesPage()),
-        ),
-        onNotification: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const NotificationPage()),
         ),
       ),
       body: LayoutBuilder(

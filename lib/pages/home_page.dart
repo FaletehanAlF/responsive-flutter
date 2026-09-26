@@ -6,7 +6,7 @@ import '../services/api_service.dart';
 import '../utils/news_theme.dart';
 import '../widgets/news_widgets.dart';
 import 'detail_page.dart';
-import 'notification_page.dart';
+import 'profile_page.dart';
 
 class HomePage extends StatefulWidget {
   final int refreshSignal;
@@ -94,10 +94,10 @@ class _HomePageState extends State<HomePage> {
     if (result == true) _load();
   }
 
-  void _openNotifications() {
+  void _openProfile() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const NotificationPage()),
+      MaterialPageRoute(builder: (context) => const ProfilePage()),
     );
   }
 
@@ -112,8 +112,8 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.white,
       // App bar konsisten di semua halaman (kecuali Articles).
       appBar: NewsAppBar(
+        onProfile: _openProfile,
         onSearch: widget.onSearchTap ?? widget.onViewAll,
-        onNotification: _openNotifications,
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
