@@ -294,15 +294,13 @@ class _ArticlesPageState extends State<ArticlesPage> {
                                         const NeverScrollableScrollPhysics(),
                                     itemCount: filtered.length,
                                     gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount:
-                                          device == AppDevice.tablet ? 2 : 2,
+                                        const SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
                                       crossAxisSpacing: 20,
                                       mainAxisSpacing: 4,
-                                      childAspectRatio:
-                                          device == AppDevice.tablet
-                                              ? 2.9
-                                              : 3.4,
+                                      // Tinggi tetap (thumbnail 96 + padding 16
+                                      // + toleransi) — anti overflow saat resize.
+                                      mainAxisExtent: 122,
                                     ),
                                     itemBuilder: (context, i) {
                                       final post = filtered[i];

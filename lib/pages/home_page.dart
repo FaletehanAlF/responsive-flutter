@@ -354,19 +354,19 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               );
                             }
-                            final cols = device == AppDevice.tablet ? 2 : 2;
+                            // Tinggi sel TETAP (bukan childAspectRatio) agar tidak
+                            // overflow saat lebar layar digeser/di-resize.
                             return GridView.builder(
                               shrinkWrap: true,
                               physics:
                                   const NeverScrollableScrollPhysics(),
                               itemCount: posts.length,
                               gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: cols,
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
                                 crossAxisSpacing: 20,
                                 mainAxisSpacing: 4,
-                                childAspectRatio:
-                                    device == AppDevice.tablet ? 2.9 : 3.4,
+                                mainAxisExtent: 118,
                               ),
                               itemBuilder: (context, i) => NewsListTile(
                                 post: posts[i],
@@ -411,7 +411,9 @@ class _BreakingCarousel extends StatefulWidget {
 }
 
 class _BreakingCarouselState extends State<_BreakingCarousel> {
-  late final PageController _controller;
+  // NB: tidak boleh `final` — controller dibuat ulang saat
+  // viewportFraction berubah (mis. resize mobile <-> tablet).
+  late PageController _controller;
 
   @override
   void initState() {
@@ -473,6 +475,7 @@ class _BreakingGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final show = posts.take(3).toList();
+    // Tinggi sel tetap 224 (kartu 220) agar aman di semua lebar desktop.
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -481,7 +484,7 @@ class _BreakingGrid extends StatelessWidget {
         crossAxisCount: show.length >= 3 ? 3 : show.length,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 1.55,
+        mainAxisExtent: 224,
       ),
       itemBuilder: (context, i) => BreakingNewsCard(
         post: show[i],
