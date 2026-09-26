@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../models/category.dart';
 import '../services/api_service.dart';
+import '../utils/news_theme.dart';
 import '../widgets/news_widgets.dart';
 import 'articles_page.dart';
 import 'profile_page.dart';
@@ -168,8 +169,8 @@ class _AddPostPageState extends State<AddPostPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
+      backgroundColor: const Color(0xFFF6F6F7),
       appBar: NewsAppBar(
         title: 'Tambah Artikel',
         showBack: widget.onSaved == null,
@@ -184,86 +185,127 @@ class _AddPostPageState extends State<AddPostPage> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final bool isDesktop = constraints.maxWidth >= 600;
-          final double cap = isDesktop ? 760 : double.infinity;
+          final device = deviceForWidth(constraints.maxWidth);
+          final contentMax =
+              device == AppDevice.mobile ? double.infinity : 720.0;
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 20),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             child: Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: cap),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Publikasikan artikel baru.',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(color: colorScheme.outline),
+                constraints: BoxConstraints(maxWidth: contentMax),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _HeaderBanner(),
+                    const SizedBox(height: 14),
+                    _FormCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _SectionHeader(
+                            number: '1',
+                            title: 'Gambar Sampul',
+                            trailing: 'Opsional',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildImagePicker(context),
+                        ],
                       ),
-                      const SizedBox(height: 20),
-                      _fieldLabel(context, 'Gambar Sampul'),
-                      _buildImagePicker(context, colorScheme),
-                      const SizedBox(height: 16),
-                      _fieldLabel(context, 'Judul Artikel'),
-                      TextField(
-                        controller: _titleController,
-                        textInputAction: TextInputAction.next,
-                        onChanged: (_) {
-                          if (_titleError != null) {
-                            setState(() => _titleError = null);
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Masukkan judul artikel',
-                          errorText: _titleError,
-                          border: const OutlineInputBorder(),
+                    ),
+                    const SizedBox(height: 12),
+                    _FormCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _SectionHeader(
+                            number: '2',
+                            title: 'Judul & Isi',
+                          ),
+                          const SizedBox(height: 12),
+                          _fieldLabel(context, 'Judul Artikel'),
+                          TextField(
+                            controller: _titleController,
+                            textInputAction: TextInputAction.next,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: NewsColors.ink,
+                            ),
+                            onChanged: (_) {
+                              if (_titleError != null) {
+                                setState(() => _titleError = null);
+                              }
+                            },
+                            decoration: _inputDecoration(
+                              hint: 'Masukkan judul artikel',
+                              errorText: _titleError,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          _fieldLabel(context, 'Isi Artikel'),
+                          TextField(
+                            controller: _contentController,
+                            maxLines: 8,
+                            minLines: 5,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              height: 1.6,
+                              color: NewsColors.ink,
+                            ),
+                            onChanged: (_) {
+                              if (_contentError != null) {
+                                setState(() => _contentError = null);
+                              }
+                            },
+                            decoration: _inputDecoration(
+                              hint: 'Tulis isi artikel di sini…',
+                              errorText: _contentError,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _FormCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _SectionHeader(
+                            number: '3',
+                            title: 'Kategori',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildCategoryDropdown(context),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: _isSubmitting ? null : _submit,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: NewsColors.primary,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 54),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      _fieldLabel(context, 'Isi Artikel'),
-                      TextField(
-                        controller: _contentController,
-                        maxLines: 10,
-                        minLines: 5,
-                        onChanged: (_) {
-                          if (_contentError != null) {
-                            setState(() => _contentError = null);
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Tulis isi artikel di sini…',
-                          errorText: _contentError,
-                          border: const OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _fieldLabel(context, 'Kategori'),
-                      _buildCategoryDropdown(context),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: FilledButton(
-                          onPressed: _isSubmitting ? null : _submit,
-                          child: _isSubmitting
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('Tambah Artikel'),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Tambah Artikel'),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -273,13 +315,53 @@ class _AddPostPageState extends State<AddPostPage> {
     );
   }
 
+  InputDecoration _inputDecoration({required String hint, String? errorText}) {
+    const radius = BorderRadius.all(Radius.circular(16));
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(
+        fontSize: 14.5,
+        color: NewsColors.muted,
+      ),
+      errorText: errorText,
+      filled: true,
+      fillColor: NewsColors.searchBg,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
+      ),
+      border: const OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: const OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide(color: NewsColors.primary, width: 1.5),
+      ),
+      errorBorder: const OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: const OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide(color: Colors.red, width: 1.5),
+      ),
+    );
+  }
+
   Widget _buildCategoryDropdown(BuildContext context) {
     return DropdownButtonFormField<int>(
       initialValue: _selectedCategoryId,
-      decoration: InputDecoration(
-        hintText: _isLoadingCategories ? 'Memuat kategori…' : 'Pilih kategori',
+      dropdownColor: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      style: const TextStyle(fontSize: 15, color: NewsColors.ink),
+      decoration: _inputDecoration(
+        hint: _isLoadingCategories ? 'Memuat kategori…' : 'Pilih kategori',
         errorText: _categoryError,
-        border: const OutlineInputBorder(),
       ),
       items: _categories
           .map(
@@ -309,59 +391,51 @@ class _AddPostPageState extends State<AddPostPage> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: Theme.of(context)
-            .textTheme
-            .labelLarge
-            ?.copyWith(fontWeight: FontWeight.w600),
+        style: const TextStyle(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w700,
+          color: NewsColors.ink,
+        ),
       ),
     );
   }
 
-  Widget _buildImagePicker(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildImagePicker(BuildContext context) {
     final image = _selectedImage;
     if (image == null) {
-      return InkWell(
-        onTap: _pickImage,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLow,
-            border: Border.all(color: colorScheme.outlineVariant),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  shape: BoxShape.circle,
+      return CustomPaint(
+        painter: _DashedBorderPainter(
+          color: const Color(0xFFC9CDD3),
+          radius: 20,
+        ),
+        child: InkWell(
+          onTap: _pickImage,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 16),
+            child: const Column(
+              children: [
+                _DropIcon(),
+                SizedBox(height: 12),
+                Text(
+                  'Pilih gambar sampul',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: NewsColors.ink,
+                  ),
                 ),
-                child: Icon(
-                  Icons.image_outlined,
-                  size: 28,
-                  color: colorScheme.onPrimaryContainer,
+                SizedBox(height: 4),
+                Text(
+                  'JPG, PNG, atau WEBP • Maks 2 MB',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: NewsColors.subtitle,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Pilih gambar',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'JPG, PNG, atau WEBP • Maks 2 MB',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: colorScheme.outline),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       );
@@ -371,10 +445,13 @@ class _AddPostPageState extends State<AddPostPage> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: _buildPreview(context, image),
+          borderRadius: BorderRadius.circular(20),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: _buildPreview(context, image),
+          ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         Row(
           children: [
             Expanded(
@@ -382,9 +459,15 @@ class _AddPostPageState extends State<AddPostPage> {
                 onPressed: _pickImage,
                 icon: const Icon(Icons.refresh, size: 18),
                 label: const Text('Ganti gambar'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             TextButton.icon(
               onPressed: () {
                 setState(() {
@@ -431,6 +514,238 @@ class _AddPostPageState extends State<AddPostPage> {
       },
     );
   }
+}
+
+/// Banner gradasi pembuka form.
+class _HeaderBanner extends StatelessWidget {
+  const _HeaderBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1E88FF), Color(0xFF0F5FCC)],
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: const Row(
+        children: [
+          _BannerIcon(),
+          SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Buat Artikel Baru',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Bagikan cerita dan wawasanmu kepada pembaca.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white70,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BannerIcon extends StatelessWidget {
+  const _BannerIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(
+        Icons.edit_note_rounded,
+        size: 28,
+        color: Colors.white,
+      ),
+    );
+  }
+}
+
+/// Kartu putih pembungkus tiap seksi form.
+class _FormCard extends StatelessWidget {
+  final Widget child;
+
+  const _FormCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF0F0F2)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Judul seksi bernomor (1 · Sampul, 2 · Judul & Isi, ...).
+class _SectionHeader extends StatelessWidget {
+  final String number;
+  final String title;
+  final String? trailing;
+
+  const _SectionHeader({
+    required this.number,
+    required this.title,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(
+            color: NewsColors.primary.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            number,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: NewsColors.primary,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w800,
+              color: NewsColors.ink,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
+        if (trailing != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: NewsColors.searchBg,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              trailing!,
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: NewsColors.subtitle,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _DropIcon extends StatelessWidget {
+  const _DropIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        color: NewsColors.primary.withValues(alpha: 0.1),
+        shape: BoxShape.circle,
+      ),
+      child: const Icon(
+        Icons.cloud_upload_outlined,
+        size: 30,
+        color: NewsColors.primary,
+      ),
+    );
+  }
+}
+
+/// Bingkai putus-putus untuk area unggah gambar.
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  final double dashWidth;
+  final double dashGap;
+  final double strokeWidth;
+
+  const _DashedBorderPainter({
+    required this.color,
+    this.radius = 20,
+    this.dashWidth = 8,
+    this.dashGap = 6,
+    this.strokeWidth = 1.5,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+    final rect = RRect.fromLTRBR(
+      strokeWidth / 2,
+      strokeWidth / 2,
+      size.width - strokeWidth / 2,
+      size.height - strokeWidth / 2,
+      Radius.circular(radius),
+    );
+    final path = Path()..addRRect(rect);
+    final dashPath = Path();
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final end = (distance + dashWidth).clamp(0.0, metric.length);
+        dashPath.addPath(metric.extractPath(distance, end), Offset.zero);
+        distance += dashWidth + dashGap;
+      }
+    }
+    canvas.drawPath(dashPath, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _PreviewError extends StatelessWidget {
