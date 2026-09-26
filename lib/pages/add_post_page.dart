@@ -706,20 +706,14 @@ class _DropIcon extends StatelessWidget {
 class _DashedBorderPainter extends CustomPainter {
   final Color color;
   final double radius;
-  final double dashWidth;
-  final double dashGap;
-  final double strokeWidth;
 
-  const _DashedBorderPainter({
-    required this.color,
-    this.radius = 20,
-    this.dashWidth = 8,
-    this.dashGap = 6,
-    this.strokeWidth = 1.5,
-  });
+  const _DashedBorderPainter({required this.color, this.radius = 20});
 
   @override
   void paint(Canvas canvas, Size size) {
+    const dashWidth = 8.0;
+    const dashGap = 6.0;
+    const strokeWidth = 1.5;
     final paint = Paint()
       ..color = color
       ..strokeWidth = strokeWidth
