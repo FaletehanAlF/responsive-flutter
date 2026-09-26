@@ -110,6 +110,11 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      // App bar konsisten di semua halaman (kecuali Articles).
+      appBar: NewsAppBar(
+        onSearch: widget.onSearchTap ?? widget.onViewAll,
+        onNotification: _openNotifications,
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final maxW = constraints.maxWidth;
@@ -147,36 +152,7 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(
-                          height: MediaQuery.of(context).padding.top + 8,
-                        ),
-                        // ── Top bar ala referensi ──
-                        Row(
-                          children: [
-                            CircleIconButton(
-                              icon: Icons.menu,
-                              onTap: () =>
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Menu segera hadir'),
-                                  duration: Duration(seconds: 1),
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                            CircleIconButton(
-                              icon: Icons.search,
-                              onTap: widget.onSearchTap ?? widget.onViewAll,
-                            ),
-                            const SizedBox(width: 10),
-                            CircleIconButton(
-                              icon: Icons.notifications_outlined,
-                              showDot: true,
-                              onTap: _openNotifications,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 6),
                         // Sapaan (dipertahankan untuk kompatibilitas + aksesibilitas)
                         const Text(
                           'Selamat datang di NARATA',

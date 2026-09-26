@@ -5,7 +5,9 @@ import 'package:image_picker/image_picker.dart';
 
 import '../models/category.dart';
 import '../services/api_service.dart';
-import '../widgets/narata_app_bar.dart';
+import '../widgets/news_widgets.dart';
+import 'articles_page.dart';
+import 'notification_page.dart';
 
 class AddPostPage extends StatefulWidget {
   final VoidCallback? onSaved;
