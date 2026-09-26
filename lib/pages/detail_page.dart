@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../utils/formatters.dart';
 import '../utils/news_theme.dart';
 import '../widgets/news_widgets.dart';
 import 'edit_post_page.dart';
@@ -55,7 +56,7 @@ class _DetailPageState extends State<DetailPage> {
     final onClose = widget.onClose;
     if (onClose != null) {
       onClose(changed);
-    } else {
+    } else if (Navigator.of(context).canPop()) {
       Navigator.pop(context, changed);
     }
   }
@@ -181,15 +182,38 @@ class _DetailPageState extends State<DetailPage> {
     );
   }
 
+  void _toggleBookmark() {
+    setState(() => _bookmarked = !_bookmarked);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content:
+              Text(_bookmarked ? 'Ditambahkan ke bookmark' : 'Bookmark dihapus'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Post>(
       future: _postFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
+          return Scaffold(
             backgroundColor: Colors.white,
-            body: Center(
+            appBar: AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              leading: IconButton(
+                tooltip: 'Kembali',
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => _close(false),
+              ),
+              title: const Text('Memuat artikel…'),
+            ),
+            body: const Center(
               child: CircularProgressIndicator(color: NewsColors.primary),
             ),
           );
@@ -202,6 +226,16 @@ class _DetailPageState extends State<DetailPage> {
                   err.contains('404');
           return Scaffold(
             backgroundColor: Colors.white,
+            appBar: AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              leading: IconButton(
+                tooltip: 'Kembali',
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => _close(false),
+              ),
+              title: const Text('Detail Artikel'),
+            ),
             body: SafeArea(
               child: Center(
                 child: Padding(
@@ -259,6 +293,16 @@ class _DetailPageState extends State<DetailPage> {
         if (post == null) {
           return Scaffold(
             backgroundColor: Colors.white,
+            appBar: AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              leading: IconButton(
+                tooltip: 'Kembali',
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => _close(false),
+              ),
+              title: const Text('Detail Artikel'),
+            ),
             body: SafeArea(
               child: Center(
                 child: Column(
@@ -292,351 +336,464 @@ class _DetailPageState extends State<DetailPage> {
   Widget _buildNewsDetail(BuildContext context, Post post) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final maxW = constraints.maxWidth;
-        final device = deviceForWidth(maxW);
-        final isMobile = device == AppDevice.mobile;
+        final device = deviceForWidth(constraints.maxWidth);
+        if (device == AppDevice.mobile) {
+          return _buildMobileDetail(context, post);
+        }
+        return _buildWebDetail(
+          context,
+          post,
+          isDesktop: device == AppDevice.desktop,
+        );
+      },
+    );
+  }
 
-        final heroHeight = isMobile
-            ? 400.0
-            : device == AppDevice.tablet
-                ? 440.0
-                : 480.0;
-        final contentMax = isMobile ? double.infinity : 780.0;
-        const overlap = 28.0;
+  // ───────────────────────── MOBILE (hero + kartu overlap) ─────────────────────────
+  Widget _buildMobileDetail(BuildContext context, Post post) {
+    const heroHeight = 400.0;
+    const overlap = 28.0;
 
-        final imageUrl = post.imageUrl;
-        final meta = relativeTime(post.createdAt);
+    final imageUrl = post.imageUrl;
+    final meta = relativeTime(post.createdAt);
 
-        return Scaffold(
-          backgroundColor: const Color(0xFFF6F6F7),
-          body: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: isMobile ? double.infinity : 900,
-              ),
-              child: Stack(
-                children: [
-                  // ── Hero image full-bleed ──
-                  SizedBox(
-                    height: heroHeight,
-                    width: double.infinity,
-                    child: ClipRRect(
-                      borderRadius: isMobile
-                          ? BorderRadius.zero
-                          : const BorderRadius.vertical(
-                              top: Radius.circular(24),
-                            ),
-                      child: Stack(
-                        fit: StackFit.expand,
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6F6F7),
+      body: Stack(
+        children: [
+          // ── Hero image full-bleed ──
+          SizedBox(
+            height: heroHeight,
+            width: double.infinity,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (imageUrl != null)
+                  Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return Container(
+                        color: const Color(0xFFE4E6EB),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: NewsColors.primary,
+                          ),
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, e, s) => Container(
+                      color: const Color(0xFF3A3A3C),
+                      child: const Center(
+                        child: Icon(
+                          Icons.image_not_supported,
+                          size: 56,
+                          color: Colors.white54,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    color: const Color(0xFF3A3A3C),
+                    child: const Center(
+                      child: Icon(
+                        Icons.image_outlined,
+                        size: 56,
+                        color: Colors.white54,
+                      ),
+                    ),
+                  ),
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0x59000000),
+                        Colors.transparent,
+                        Color(0x22000000),
+                        Color(0xE6000000),
+                      ],
+                      stops: [0.0, 0.35, 0.62, 1.0],
+                    ),
+                  ),
+                ),
+                // Teks overlay di bawah hero
+                Positioned(
+                  left: 20,
+                  right: 20,
+                  bottom: overlap + 18,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FloatingCategoryBadge(label: post.categoryName),
+                      const SizedBox(height: 10),
+                      Text(
+                        post.title,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 23,
+                          height: 1.22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
                         children: [
-                          if (imageUrl != null)
-                            Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
-                              loadingBuilder:
-                                  (context, child, progress) {
-                                if (progress == null) return child;
-                                return Container(
-                                  color: const Color(0xFFE4E6EB),
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      color: NewsColors.primary,
-                                    ),
-                                  ),
-                                );
-                              },
-                              errorBuilder: (context, e, s) => Container(
-                                color: const Color(0xFF3A3A3C),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.image_not_supported,
-                                    size: 56,
-                                    color: Colors.white54,
-                                  ),
-                                ),
-                              ),
-                            )
-                          else
-                            Container(
-                              color: const Color(0xFF3A3A3C),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.image_outlined,
-                                  size: 56,
-                                  color: Colors.white54,
+                          const Text(
+                            'Trending',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12.5,
+                            ),
+                          ),
+                          if (meta.isNotEmpty) ...[
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 6),
+                              child: Text(
+                                '•',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
                                 ),
                               ),
                             ),
-                          const DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Color(0x59000000),
-                                  Colors.transparent,
-                                  Color(0x22000000),
-                                  Color(0xE6000000),
-                                ],
-                                stops: [0.0, 0.35, 0.62, 1.0],
+                            Flexible(
+                              child: Text(
+                                meta,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Konten scroll + kartu putih overlap ──
+          SingleChildScrollView(
+            padding: const EdgeInsets.only(
+              top: heroHeight - overlap,
+              bottom: 24,
+            ),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x1A000000),
+                    blurRadius: 24,
+                    offset: Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Author row ala CNN Indonesia
+                    Row(
+                      children: [
+                        _SourceLogo(name: post.categoryName),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  post.categoryName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: NewsColors.ink,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 5),
+                              const Icon(
+                                Icons.verified,
+                                size: 16,
+                                color: NewsColors.primary,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    ..._paragraphs(post.content).map(
+                      (p) => Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: Text(
+                          p,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            height: 1.65,
+                            color: Color(0xFF2B2B2E),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Aksi Kelola (dipertahankan untuk kompatibilitas)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _openEdit(post),
+                            icon: const Icon(
+                              Icons.edit_outlined,
+                              size: 18,
+                            ),
+                            label: const Text('Edit Artikel'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 13,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
                               ),
                             ),
                           ),
-                          // Teks overlay di bawah hero
-                          Positioned(
-                            left: 20,
-                            right: 20,
-                            bottom: overlap + 18,
-                            child: ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth: contentMax == double.infinity
-                                    ? double.infinity
-                                    : contentMax,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _confirmDelete(post),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              size: 18,
+                            ),
+                            label: const Text('Hapus Artikel'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 13,
                               ),
-                              child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  FloatingCategoryBadge(
-                                    label: post.categoryName,
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    post.title,
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 23,
-                                      height: 1.22,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.4,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      const Text(
-                                        'Trending',
-                                        style: TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 12.5,
-                                        ),
-                                      ),
-                                      if (meta.isNotEmpty) ...[
-                                        const Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 6,
-                                          ),
-                                          child: Text(
-                                            '•',
-                                            style: TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ),
-                                        Text(
-                                          meta,
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 12.5,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ],
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
                               ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Top bar melayang (PALING ATAS agar bisa diklik) ──
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            left: 16,
+            right: 16,
+            child: Row(
+              children: [
+                _GlassCircleButton(
+                  icon: Icons.arrow_back,
+                  tooltip: 'Kembali',
+                  onTap: () => _close(false),
+                ),
+                const Spacer(),
+                _GlassCircleButton(
+                  icon: _bookmarked ? Icons.bookmark : Icons.bookmark_border,
+                  tooltip: 'Bookmark',
+                  onTap: _toggleBookmark,
+                ),
+                const SizedBox(width: 10),
+                _GlassCircleButton(
+                  icon: Icons.more_horiz,
+                  tooltip: 'Opsi lainnya',
+                  onTap: () => _showMore(post),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────── TABLET & WEB (layout editorial 2 kolom) ───────────────
+  Widget _buildWebDetail(
+    BuildContext context,
+    Post post, {
+    required bool isDesktop,
+  }) {
+    final imageUrl = post.imageUrl;
+    final date = formatPostDate(post.createdAt);
+    final meta = relativeTime(post.createdAt);
+    final readTime = _readTime(post.content);
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          // Header web: back + breadcrumb + aksi
+          Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                bottom: BorderSide(color: Color(0xFFF0F0F2)),
+              ),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              28,
+              MediaQuery.of(context).padding.top + 12,
+              28,
+              12,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isDesktop ? 1080 : 720,
+                ),
+                child: Row(
+                  children: [
+                    CircleIconButton(
+                      icon: Icons.arrow_back,
+                      onTap: () => _close(false),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Beranda / Artikel / ${post.categoryName}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: NewsColors.subtitle,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            'Detail Artikel',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                              color: NewsColors.ink,
+                              letterSpacing: -0.2,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-
-                  // ── Top bar melayang ──
-                  Positioned(
-                    top: MediaQuery.of(context).padding.top + 10,
-                    left: 16,
-                    right: 16,
-                    child: Row(
-                      children: [
-                        _GlassCircleButton(
-                          icon: Icons.arrow_back,
-                          onTap: () => _close(false),
-                        ),
-                        const Spacer(),
-                        _GlassCircleButton(
-                          icon: _bookmarked
-                              ? Icons.bookmark
-                              : Icons.bookmark_border,
-                          onTap: () => setState(
-                            () => _bookmarked = !_bookmarked,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        _GlassCircleButton(
-                          icon: Icons.more_horiz,
-                          onTap: () => _showMore(post),
-                        ),
-                      ],
+                    CircleIconButton(
+                      icon: _bookmarked
+                          ? Icons.bookmark
+                          : Icons.bookmark_border,
+                      onTap: _toggleBookmark,
                     ),
-                  ),
-
-                  // ── Konten scroll + kartu putih overlap ──
-                  SingleChildScrollView(
-                    padding: EdgeInsets.only(
-                      top: heroHeight - overlap,
-                      bottom: 24,
+                    const SizedBox(width: 10),
+                    CircleIconButton(
+                      icon: Icons.more_horiz,
+                      onTap: () => _showMore(post),
                     ),
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: contentMax == double.infinity
-                              ? double.infinity
-                              : contentMax,
-                        ),
-                        child: Container(
-                          margin: EdgeInsets.symmetric(
-                            horizontal: isMobile ? 12 : 24,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(26),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x1A000000),
-                                blurRadius: 24,
-                                offset: Offset(0, 10),
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(
-                              20,
-                              18,
-                              20,
-                              20,
-                            ),
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                // Author row ala CNN Indonesia
-                                Row(
-                                  children: [
-                                    _SourceLogo(name: post.categoryName),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Row(
-                                        children: [
-                                          Flexible(
-                                            child: Text(
-                                              post.categoryName,
-                                              maxLines: 1,
-                                              overflow:
-                                                  TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w700,
-                                                color: NewsColors.ink,
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 5),
-                                          const Icon(
-                                            Icons.verified,
-                                            size: 16,
-                                            color: NewsColors.primary,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 14),
-                                ..._paragraphs(post.content).map(
-                                  (p) => Padding(
-                                    padding: const EdgeInsets.only(
-                                      bottom: 14,
-                                    ),
-                                    child: Text(
-                                      p,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        height: 1.65,
-                                        color: Color(0xFF2B2B2E),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                // Aksi Kelola (dipertahankan untuk kompatibilitas)
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: () => _openEdit(post),
-                                        icon: const Icon(
-                                          Icons.edit_outlined,
-                                          size: 18,
-                                        ),
-                                        label:
-                                            const Text('Edit Artikel'),
-                                        style: OutlinedButton.styleFrom(
-                                          padding:
-                                              const EdgeInsets.symmetric(
-                                            vertical: 13,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(14),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: () =>
-                                            _confirmDelete(post),
-                                        icon: const Icon(
-                                          Icons.delete_outline,
-                                          size: 18,
-                                        ),
-                                        label: const Text(
-                                          'Hapus Artikel',
-                                        ),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.red,
-                                          padding:
-                                              const EdgeInsets.symmetric(
-                                            vertical: 13,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(14),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        );
-      },
+
+          // Isi
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(28, 28, 28, 40),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: isDesktop ? 1080 : 720,
+                  ),
+                  child: isDesktop
+                      ? Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 5,
+                              child: _WebArticleBody(
+                                post: post,
+                                imageUrl: imageUrl,
+                                date: date,
+                                meta: meta,
+                                readTime: readTime,
+                                onEdit: () => _openEdit(post),
+                                onDelete: () => _confirmDelete(post),
+                              ),
+                            ),
+                            const SizedBox(width: 32),
+                            SizedBox(
+                              width: 300,
+                              child: _WebSidePanel(
+                                post: post,
+                                date: date,
+                                meta: meta,
+                                readTime: readTime,
+                                bookmarked: _bookmarked,
+                                onBookmark: _toggleBookmark,
+                                onShare: () {
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(
+                                    const SnackBar(
+                                      content:
+                                          Text('Tautan artikel disalin'),
+                                      duration: Duration(seconds: 1),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        )
+                      : _WebArticleBody(
+                          post: post,
+                          imageUrl: imageUrl,
+                          date: date,
+                          meta: meta,
+                          readTime: readTime,
+                          onEdit: () => _openEdit(post),
+                          onDelete: () => _confirmDelete(post),
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  String _readTime(String content) {
+    final words = content
+        .split(RegExp(r'\s+'))
+        .where((w) => w.trim().isNotEmpty)
+        .length;
+    final minutes = (words / 200).ceil().clamp(1, 999);
+    return '$minutes mnt baca';
   }
 
   List<String> _paragraphs(String content) {
@@ -645,29 +802,463 @@ class _DetailPageState extends State<DetailPage> {
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toList();
-    if (parts.isEmpty) return [content.trim().isEmpty ? '-' : content.trim()];
+    if (parts.isEmpty) {
+      return [content.trim().isEmpty ? '-' : content.trim()];
+    }
     return parts;
+  }
+}
+
+/// Kolom utama artikel untuk tablet/web.
+class _WebArticleBody extends StatelessWidget {
+  final Post post;
+  final String? imageUrl;
+  final String date;
+  final String meta;
+  final String readTime;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _WebArticleBody({
+    required this.post,
+    required this.imageUrl,
+    required this.date,
+    required this.meta,
+    required this.readTime,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl;
+    final paragraphs = post.content
+        .split(RegExp(r'\n\s*\n|\n'))
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            FloatingCategoryBadge(label: post.categoryName),
+            if (meta.isNotEmpty) ...[
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  meta,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: NewsColors.subtitle,
+                  ),
+                ),
+              ),
+            ],
+            const Spacer(),
+            const Icon(
+              Icons.schedule_outlined,
+              size: 15,
+              color: NewsColors.muted,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              readTime,
+              style: const TextStyle(
+                fontSize: 13,
+                color: NewsColors.subtitle,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Text(
+          post.title,
+          style: const TextStyle(
+            fontSize: 34,
+            height: 1.2,
+            fontWeight: FontWeight.w800,
+            color: NewsColors.ink,
+            letterSpacing: -0.6,
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Baris penulis
+        Row(
+          children: [
+            _SourceLogo(name: post.categoryName),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          post.categoryName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: NewsColors.ink,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      const Icon(
+                        Icons.verified,
+                        size: 16,
+                        color: NewsColors.primary,
+                      ),
+                    ],
+                  ),
+                  if (date.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        'Diterbitkan $date',
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: NewsColors.subtitle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        if (url != null)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Image.network(
+                url,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return Container(
+                    color: const Color(0xFFF1F2F4),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: NewsColors.primary,
+                      ),
+                    ),
+                  );
+                },
+                errorBuilder: (context, e, s) => Container(
+                  color: const Color(0xFFE4E6EB),
+                  child: const Center(
+                    child: Icon(
+                      Icons.image_not_supported,
+                      size: 48,
+                      color: NewsColors.muted,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        const SizedBox(height: 22),
+        ...((paragraphs.isEmpty ? [post.content] : paragraphs).map(
+          (p) => Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: SelectableText(
+              p,
+              style: const TextStyle(
+                fontSize: 16.5,
+                height: 1.8,
+                color: Color(0xFF2B2B2E),
+              ),
+            ),
+          ),
+        )),
+        const Divider(height: 32),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Edit Artikel'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete_outline, size: 18),
+                label: const Text('Hapus Artikel'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Panel samping khusus desktop: info + aksi.
+class _WebSidePanel extends StatelessWidget {
+  final Post post;
+  final String date;
+  final String meta;
+  final String readTime;
+  final bool bookmarked;
+  final VoidCallback onBookmark;
+  final VoidCallback onShare;
+
+  const _WebSidePanel({
+    required this.post,
+    required this.date,
+    required this.meta,
+    required this.readTime,
+    required this.bookmarked,
+    required this.onBookmark,
+    required this.onShare,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Kartu penulis
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF7F7F8),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFF0F0F2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Ditulis oleh',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: NewsColors.subtitle,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  _SourceLogo(name: post.categoryName, big: true),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            post.categoryName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: NewsColors.ink,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        const Icon(
+                          Icons.verified,
+                          size: 16,
+                          color: NewsColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Kartu info artikel
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFFF0F0F2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Info artikel',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: NewsColors.subtitle,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _InfoRow(
+                icon: Icons.category_outlined,
+                label: 'Kategori',
+                value: post.categoryName,
+              ),
+              const SizedBox(height: 10),
+              if (date.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _InfoRow(
+                    icon: Icons.calendar_today_outlined,
+                    label: 'Diterbitkan',
+                    value: date,
+                  ),
+                ),
+              _InfoRow(
+                icon: Icons.schedule_outlined,
+                label: 'Waktu baca',
+                value: readTime,
+              ),
+              if (meta.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: _InfoRow(
+                    icon: Icons.trending_up,
+                    label: 'Aktivitas',
+                    value: meta,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+          onPressed: onBookmark,
+          icon: Icon(
+            bookmarked ? Icons.bookmark : Icons.bookmark_border,
+            size: 18,
+          ),
+          label: Text(bookmarked ? 'Tersimpan' : 'Simpan artikel'),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: onShare,
+          icon: const Icon(Icons.share_outlined, size: 18),
+          label: const Text('Bagikan'),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 17, color: NewsColors.muted),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: NewsColors.subtitle,
+                ),
+              ),
+              const SizedBox(height: 1),
+              Text(
+                value,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: NewsColors.ink,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 
 class _GlassCircleButton extends StatelessWidget {
   final IconData icon;
+  final String? tooltip;
   final VoidCallback onTap;
 
-  const _GlassCircleButton({required this.icon, required this.onTap});
+  const _GlassCircleButton({
+    required this.icon,
+    required this.onTap,
+    this.tooltip,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black.withValues(alpha: 0.32),
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 42,
-          height: 42,
-          child: Icon(icon, size: 20, color: Colors.white),
+    return Tooltip(
+      message: tooltip ?? '',
+      child: Material(
+        color: Colors.black.withValues(alpha: 0.32),
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: 42,
+            height: 42,
+            child: Icon(icon, size: 20, color: Colors.white),
+          ),
         ),
       ),
     );
@@ -677,17 +1268,18 @@ class _GlassCircleButton extends StatelessWidget {
 /// Logo sumber ala CNN (lingkaran merah + inisial putih).
 class _SourceLogo extends StatelessWidget {
   final String name;
+  final bool big;
 
-  const _SourceLogo({required this.name});
+  const _SourceLogo({required this.name, this.big = false});
 
   @override
   Widget build(BuildContext context) {
     final initials = initialFor(name);
-    final short =
-        initials.length >= 3 ? initials.substring(0, 3) : initials;
+    final short = initials.length >= 3 ? initials.substring(0, 3) : initials;
+    final size = big ? 46.0 : 38.0;
     return Container(
-      width: 38,
-      height: 38,
+      width: size,
+      height: size,
       decoration: const BoxDecoration(
         color: Color(0xFFCC0000),
         shape: BoxShape.circle,
@@ -695,9 +1287,9 @@ class _SourceLogo extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         short.isEmpty ? 'N' : short,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white,
-          fontSize: 13,
+          fontSize: big ? 15 : 13,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.3,
         ),
