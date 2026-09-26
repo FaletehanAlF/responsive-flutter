@@ -633,128 +633,49 @@ class _DetailPageState extends State<DetailPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          // Header web: back + breadcrumb + aksi
-          Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                bottom: BorderSide(color: Color(0xFFF0F0F2)),
-              ),
-            ),
-            padding: EdgeInsets.fromLTRB(
-              28,
-              MediaQuery.of(context).padding.top + 12,
-              28,
-              12,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: isDesktop ? 1080 : 720,
-                ),
-                child: Row(
-                  children: [
-                    CircleIconButton(
-                      icon: Icons.arrow_back,
-                      onTap: () => _close(false),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Beranda / Artikel / ${post.categoryName}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: NewsColors.subtitle,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          const Text(
-                            'Detail Artikel',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                              color: NewsColors.ink,
-                              letterSpacing: -0.2,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    CircleIconButton(
-                      icon: _bookmarked
-                          ? Icons.bookmark
-                          : Icons.bookmark_border,
-                      onTap: _toggleBookmark,
-                    ),
-                    const SizedBox(width: 10),
-                    CircleIconButton(
-                      icon: Icons.more_horiz,
-                      onTap: () => _showMore(post),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+      // App bar SAMA persis dengan halaman lain (konsisten mobile & web).
+      appBar: NewsAppBar(
+        title: 'Detail Artikel',
+        showBack: true,
+        onBack: () => _close(false),
+        trailingActions: [
+          CircleIconButton(
+            icon: _bookmarked ? Icons.bookmark : Icons.bookmark_border,
+            onTap: _toggleBookmark,
           ),
-
-          // Isi
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(28, 28, 28, 40),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth: isDesktop ? 1080 : 720,
+          CircleIconButton(
+            icon: Icons.more_horiz,
+            onTap: () => _showMore(post),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(28, 20, 28, 40),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: isDesktop ? 1080 : 720,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Beranda / Artikel / ${post.categoryName}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: NewsColors.subtitle,
                   ),
-                  child: isDesktop
-                      ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 5,
-                              child: _WebArticleBody(
-                                post: post,
-                                imageUrl: imageUrl,
-                                date: date,
-                                meta: meta,
-                                readTime: readTime,
-                                onEdit: () => _openEdit(post),
-                                onDelete: () => _confirmDelete(post),
-                              ),
-                            ),
-                            const SizedBox(width: 32),
-                            SizedBox(
-                              width: 300,
-                              child: _WebSidePanel(
-                                post: post,
-                                date: date,
-                                meta: meta,
-                                readTime: readTime,
-                                bookmarked: _bookmarked,
-                                onBookmark: _toggleBookmark,
-                                onShare: () {
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(
-                                    const SnackBar(
-                                      content:
-                                          Text('Tautan artikel disalin'),
-                                      duration: Duration(seconds: 1),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        )
-                      : _WebArticleBody(
+                ),
+                const SizedBox(height: 14),
+                if (isDesktop)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 5,
+                        child: _WebArticleBody(
                           post: post,
                           imageUrl: imageUrl,
                           date: date,
@@ -763,11 +684,43 @@ class _DetailPageState extends State<DetailPage> {
                           onEdit: () => _openEdit(post),
                           onDelete: () => _confirmDelete(post),
                         ),
-                ),
-              ),
+                      ),
+                      const SizedBox(width: 32),
+                      SizedBox(
+                        width: 300,
+                        child: _WebSidePanel(
+                          post: post,
+                          date: date,
+                          meta: meta,
+                          readTime: readTime,
+                          bookmarked: _bookmarked,
+                          onBookmark: _toggleBookmark,
+                          onShare: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Tautan artikel disalin'),
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  _WebArticleBody(
+                    post: post,
+                    imageUrl: imageUrl,
+                    date: date,
+                    meta: meta,
+                    readTime: readTime,
+                    onEdit: () => _openEdit(post),
+                    onDelete: () => _confirmDelete(post),
+                  ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
