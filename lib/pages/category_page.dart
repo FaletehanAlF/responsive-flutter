@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/category.dart';
 import '../services/api_service.dart';
+import '../utils/news_theme.dart';
 import '../widgets/news_widgets.dart';
 
 class CategoryPage extends StatefulWidget {
@@ -55,6 +56,13 @@ class _CategoryPageState extends State<CategoryPage> {
     });
   }
 
+  Future<void> _refresh() async {
+    _load();
+    try {
+      await _dataFuture;
+    } catch (_) {}
+  }
+
   Future<void> _showCategoryDialog({Category? existing}) async {
     final name = await showDialog<String>(
       context: context,
@@ -89,6 +97,9 @@ class _CategoryPageState extends State<CategoryPage> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
           title: const Text('Hapus kategori?'),
           content: Text(
             'Kategori "${category.name}" akan dihapus dari daftar.',
@@ -129,44 +140,49 @@ class _CategoryPageState extends State<CategoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
+      backgroundColor: const Color(0xFFF6F6F7),
       appBar: const NewsAppBar(title: 'Kategori', showBack: true),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Tambah Kategori',
-        onPressed: _showCategoryDialog,
+        backgroundColor: NewsColors.primary,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        onPressed: () => _showCategoryDialog(),
         child: const Icon(Icons.add),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final bool isDesktop = constraints.maxWidth >= 600;
-          final double cap = isDesktop ? 760 : double.infinity;
+          final device = deviceForWidth(constraints.maxWidth);
+          final contentMax =
+              device == AppDevice.mobile ? double.infinity : 720.0;
 
           return Center(
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: cap),
+              constraints: BoxConstraints(maxWidth: contentMax),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 20,
-                ),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 88),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Kategori',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: NewsColors.ink,
+                        letterSpacing: -0.5,
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      'Kelola kategori artikel.',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: colorScheme.outline),
+                    const Text(
+                      'Kelompokkan artikel agar mudah ditemukan.',
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        color: NewsColors.subtitle,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
@@ -177,7 +193,9 @@ class _CategoryPageState extends State<CategoryPage> {
                           if (snapshot.connectionState ==
                               ConnectionState.waiting) {
                             return const Center(
-                              child: CircularProgressIndicator(),
+                              child: CircularProgressIndicator(
+                                color: NewsColors.primary,
+                              ),
                             );
                           }
                           if (snapshot.hasError) {
@@ -185,29 +203,37 @@ class _CategoryPageState extends State<CategoryPage> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
-                                    Icons.cloud_off_outlined,
-                                    size: 48,
-                                    color: colorScheme.outline,
+                                  Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFEDEDEF),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.cloud_off_outlined,
+                                      size: 44,
+                                      color: NewsColors.muted,
+                                    ),
                                   ),
-                                  const SizedBox(height: 12),
-                                  Text(
+                                  const SizedBox(height: 14),
+                                  const Text(
                                     'Gagal memuat kategori',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: NewsColors.ink,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     '${snapshot.error}',
                                     textAlign: TextAlign.center,
-                                    style:
-                                        Theme.of(context).textTheme.bodySmall,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: NewsColors.subtitle,
+                                    ),
                                   ),
-                                  const SizedBox(height: 12),
+                                  const SizedBox(height: 14),
                                   OutlinedButton.icon(
                                     onPressed: _load,
                                     icon: const Icon(Icons.refresh),
@@ -223,26 +249,52 @@ class _CategoryPageState extends State<CategoryPage> {
                           final counts = snapshot.data?.counts ?? const {};
 
                           if (categories.isEmpty) {
-                            return const Center(
-                              child: Text('Belum ada kategori'),
+                            return _EmptyCategories(
+                              onAdd: () => _showCategoryDialog(),
                             );
                           }
 
-                          return ListView.separated(
-                            itemCount: categories.length,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(height: 8),
-                            itemBuilder: (context, index) {
-                              final category = categories[index];
-                              return _CategoryTile(
-                                category: category,
-                                count: counts[category.id] ?? 0,
-                                onEdit: () => _showCategoryDialog(
-                                  existing: category,
+                          final totalArticles = counts.values.fold<int>(
+                            0,
+                            (sum, v) => sum + v,
+                          );
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Ringkasan alur: total kategori & artikel.
+                              _SummaryStripe(
+                                totalCategories: categories.length,
+                                totalArticles: totalArticles,
+                              ),
+                              const SizedBox(height: 12),
+                              Expanded(
+                                child: RefreshIndicator(
+                                  color: NewsColors.primary,
+                                  onRefresh: _refresh,
+                                  child: ListView.separated(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    itemCount: categories.length,
+                                    separatorBuilder: (context, index) =>
+                                        const SizedBox(height: 10),
+                                    itemBuilder: (context, index) {
+                                      final category = categories[index];
+                                      return _CategoryCard(
+                                        category: category,
+                                        count:
+                                            counts[category.id] ?? 0,
+                                        onEdit: () => _showCategoryDialog(
+                                          existing: category,
+                                        ),
+                                        onDelete: () =>
+                                            _confirmDelete(category),
+                                      );
+                                    },
+                                  ),
                                 ),
-                                onDelete: () => _confirmDelete(category),
-                              );
-                            },
+                              ),
+                            ],
                           );
                         },
                       ),
@@ -253,6 +305,231 @@ class _CategoryPageState extends State<CategoryPage> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Strip ringkasan: berapa kategori & artikel — memperjelas alur kelola.
+class _SummaryStripe extends StatelessWidget {
+  final int totalCategories;
+  final int totalArticles;
+
+  const _SummaryStripe({
+    required this.totalCategories,
+    required this.totalArticles,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      decoration: BoxDecoration(
+        color: NewsColors.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.dashboard_outlined,
+            size: 20,
+            color: NewsColors.primary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              '$totalCategories kategori • $totalArticles artikel',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: NewsColors.primary,
+              ),
+            ),
+          ),
+          const Text(
+            'Geser ke bawah untuk memuat ulang',
+            style: TextStyle(
+              fontSize: 11,
+              color: NewsColors.subtitle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Kartu kategori modern: ikon warna + nama + hitungan + aksi edit/hapus.
+class _CategoryCard extends StatelessWidget {
+  final Category category;
+  final int count;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _CategoryCard({
+    required this.category,
+    required this.count,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tint = avatarColorFor(category.name);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF0F0F2)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: tint.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              initialFor(category.name).isEmpty
+                  ? 'K'
+                  : initialFor(category.name)[0],
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: tint,
+              ),
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  category.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w700,
+                    color: NewsColors.ink,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: NewsColors.searchBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '$count artikel',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: NewsColors.subtitle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          CircleIconButton(
+            icon: Icons.edit_outlined,
+            onTap: onEdit,
+          ),
+          const SizedBox(width: 8),
+          CircleIconButton(
+            icon: Icons.delete_outline,
+            background: Colors.red.withValues(alpha: 0.1),
+            foreground: Colors.red.shade600,
+            onTap: onDelete,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// State kosong dengan ajakan bertindak yang jelas.
+class _EmptyCategories extends StatelessWidget {
+  final VoidCallback onAdd;
+
+  const _EmptyCategories({required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.folder_outlined,
+              size: 48,
+              color: NewsColors.muted,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Belum ada kategori',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: NewsColors.ink,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Buat kategori pertama untuk\nmengelompokkan artikelmu.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13.5,
+              height: 1.5,
+              color: NewsColors.subtitle,
+            ),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: onAdd,
+            icon: const Icon(Icons.add, size: 20),
+            label: const Text('Buat Kategori'),
+            style: FilledButton.styleFrom(
+              backgroundColor: NewsColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 22,
+                vertical: 13,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -293,7 +570,30 @@ class _CategoryNameDialogState extends State<_CategoryNameDialog> {
   Widget build(BuildContext context) {
     final isEdit = widget.category != null;
     return AlertDialog(
-      title: Text(isEdit ? 'Edit Kategori' : 'Tambah Kategori'),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+      ),
+      title: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: NewsColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              isEdit ? Icons.edit_outlined : Icons.add,
+              size: 22,
+              color: NewsColors.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(isEdit ? 'Edit Kategori' : 'Tambah Kategori'),
+          ),
+        ],
+      ),
       content: TextField(
         controller: _controller,
         autofocus: true,
@@ -309,6 +609,27 @@ class _CategoryNameDialogState extends State<_CategoryNameDialog> {
           labelText: 'Nama Kategori',
           hintText: 'Masukkan nama kategori',
           errorText: _error,
+          filled: true,
+          fillColor: NewsColors.searchBg,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+          border: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+            borderSide: BorderSide(
+              color: NewsColors.primary,
+              width: 1.5,
+            ),
+          ),
         ),
       ),
       actions: [
@@ -316,77 +637,18 @@ class _CategoryNameDialogState extends State<_CategoryNameDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('Batal'),
         ),
-        FilledButton(onPressed: _submit, child: const Text('Simpan')),
+        FilledButton(
+          onPressed: _submit,
+          style: FilledButton.styleFrom(
+            backgroundColor: NewsColors.primary,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          child: const Text('Simpan'),
+        ),
       ],
-    );
-  }
-}
-
-class _CategoryTile extends StatelessWidget {
-  final Category category;
-  final int count;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  const _CategoryTile({
-    required this.category,
-    required this.count,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Card(
-      elevation: 0,
-      color: colorScheme.surfaceContainerLow,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: colorScheme.outlineVariant),
-      ),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            Icons.folder_outlined,
-            size: 20,
-            color: colorScheme.onPrimaryContainer,
-          ),
-        ),
-        title: Text(
-          category.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          '$count artikel',
-          style: Theme.of(context)
-              .textTheme
-              .bodySmall
-              ?.copyWith(color: colorScheme.outline),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              tooltip: 'Ubah',
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_outlined),
-            ),
-            IconButton(
-              tooltip: 'Hapus',
-              onPressed: onDelete,
-              icon: const Icon(Icons.delete_outline),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
