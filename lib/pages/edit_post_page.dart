@@ -183,8 +183,8 @@ class _EditPostPageState extends State<EditPostPage> {
     final oldImageUrl = widget.post.imageUrl;
 
     return Scaffold(
-      appBar: const NarataAppBar(
-        title: Text('Edit Artikel'),
+      appBar: const NewsAppBar(
+        title: 'Edit Artikel',
         showBack: true,
       ),
       body: LayoutBuilder(

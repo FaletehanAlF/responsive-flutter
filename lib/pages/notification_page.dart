@@ -9,10 +9,9 @@ class NotificationPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: const NarataAppBar(
-        title: Text('Notifikasi'),
+      appBar: const NewsAppBar(
+        title: 'Notifikasi',
         showBack: true,
-        showNotification: false,
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

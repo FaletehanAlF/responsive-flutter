@@ -9,10 +9,9 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: const NarataAppBar(
-        title: Text('Profil'),
+      appBar: const NewsAppBar(
+        title: 'Profil',
         showBack: true,
-        showProfile: false,
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

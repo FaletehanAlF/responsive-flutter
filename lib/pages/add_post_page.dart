@@ -170,9 +170,17 @@ class _AddPostPageState extends State<AddPostPage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: NarataAppBar(
-        title: const Text('Tambah Artikel'),
+      appBar: NewsAppBar(
+        title: 'Tambah Artikel',
         showBack: widget.onSaved == null,
+        onSearch: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ArticlesPage()),
+        ),
+        onNotification: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationPage()),
+        ),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

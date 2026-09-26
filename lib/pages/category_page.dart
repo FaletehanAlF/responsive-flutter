@@ -131,7 +131,7 @@ class _CategoryPageState extends State<CategoryPage> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: const NarataAppBar(title: Text('Kategori'), showBack: true),
+      appBar: const NewsAppBar(title: 'Kategori', showBack: true),
       floatingActionButton: FloatingActionButton(
         tooltip: 'Tambah Kategori',
         onPressed: _showCategoryDialog,

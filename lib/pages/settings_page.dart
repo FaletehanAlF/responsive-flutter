@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/narata_app_bar.dart';
+import '../widgets/news_widgets.dart';
+import 'articles_page.dart';
 import 'category_page.dart';
+import 'notification_page.dart';
 
 const String kAppVersion = '1.0.0';
 
@@ -62,7 +64,17 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: const NarataAppBar(title: Text('Pengaturan')),
+      appBar: NewsAppBar(
+        title: 'Pengaturan',
+        onSearch: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ArticlesPage()),
+        ),
+        onNotification: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const NotificationPage()),
+        ),
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool desktop = constraints.maxWidth >= 600;
