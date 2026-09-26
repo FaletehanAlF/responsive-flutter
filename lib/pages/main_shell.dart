@@ -164,8 +164,10 @@ class _MainShellState extends State<MainShell> {
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.person_outline, color: Color(0xFF9AA0A6)),
+                  // Langsung ikon profil — tidak berubah jadi gir saat diklik,
+                  // hanya warnanya yang menyesuaikan pil indikator.
                   selectedIcon:
-                      Icon(Icons.settings, color: Colors.white),
+                      Icon(Icons.person_outline, color: Colors.white),
                   label: 'Pengaturan',
                 ),
               ],
@@ -230,8 +232,8 @@ class _MainShellState extends State<MainShell> {
                 label: Text('Tambah Artikel'),
               ),
               NavigationRailDestination(
-                icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings),
+                icon: Icon(Icons.person_outline),
+                selectedIcon: Icon(Icons.person_outline),
                 label: Text('Pengaturan'),
               ),
             ],
