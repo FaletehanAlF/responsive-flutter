@@ -3,20 +3,24 @@ import 'package:flutter/material.dart';
 import '../models/category.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
-import '../utils/formatters.dart';
-import '../widgets/category_badge.dart';
-import '../widgets/narata_app_bar.dart';
+import '../utils/news_theme.dart';
+import '../widgets/news_widgets.dart';
 import 'detail_page.dart';
+import 'notification_page.dart';
 
 class HomePage extends StatefulWidget {
   final int refreshSignal;
   final ValueChanged<int>? onOpenDetail;
+  final VoidCallback? onViewAll;
+  final VoidCallback? onSearchTap;
   final ApiService? apiService;
 
   const HomePage({
     super.key,
     this.refreshSignal = 0,
     this.onOpenDetail,
+    this.onViewAll,
+    this.onSearchTap,
     this.apiService,
   });
 
@@ -32,12 +36,20 @@ class _HomePageState extends State<HomePage> {
 
   int? _selectedCategoryId;
   int _lastSignal = 0;
+  int _carouselIndex = 0;
+  PageController? _pageController;
 
   @override
   void initState() {
     super.initState();
     _lastSignal = widget.refreshSignal;
     _startRequests();
+  }
+
+  @override
+  void dispose() {
+    _pageController?.dispose();
+    super.dispose();
   }
 
   @override
@@ -55,12 +67,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _load() {
-    setState(_startRequests);
+    setState(() {
+      _startRequests();
+      _carouselIndex = 0;
+    });
   }
 
   Future<void> _refresh() async {
     _load();
-    await Future.wait([_postsFuture, _categoriesFuture]);
+    try {
+      await Future.wait([_postsFuture, _categoriesFuture]);
+    } catch (_) {}
   }
 
   Future<void> _openDetail(Post post) async {
@@ -69,7 +86,6 @@ class _HomePageState extends State<HomePage> {
       onOpenDetail(post.id);
       return;
     }
-
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => DetailPage(postId: post.id)),
@@ -78,148 +94,290 @@ class _HomePageState extends State<HomePage> {
     if (result == true) _load();
   }
 
+  void _openNotifications() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const NotificationPage()),
+    );
+  }
+
+  List<Post> _filterByCategory(List<Post> posts) {
+    if (_selectedCategoryId == null) return posts;
+    return posts.where((p) => p.categoryId == _selectedCategoryId).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: const NarataAppBar(
-        title: Text(
-          'NARATA',
-          style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 1.2),
-        ),
-      ),
+      backgroundColor: Colors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final bool desktop = constraints.maxWidth >= 600;
-          final bool useGrid = constraints.maxWidth >= 900;
+          final maxW = constraints.maxWidth;
+          final device = deviceForWidth(maxW);
+          final contentMax = contentMaxWidth(maxW, desktop: 1150);
+          final isDesktop = device == AppDevice.desktop;
+          final isTablet = device == AppDevice.tablet;
+
+          final horizontalPad = device == AppDevice.mobile ? 20.0 : 24.0;
+          final carouselHeight = device == AppDevice.mobile
+              ? 210.0
+              : isTablet
+                  ? 280.0
+                  : 320.0;
+
           return RefreshIndicator(
+            color: NewsColors.primary,
             onRefresh: _refresh,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.symmetric(
-                horizontal: desktop ? 24 : 16,
-                vertical: 20,
-              ),
               child: Center(
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxWidth: desktop ? 1100 : double.infinity,
+                    maxWidth: contentMax == double.infinity
+                        ? double.infinity
+                        : contentMax,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Selamat datang di NARATA',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Baca dan kelola artikel terbaru.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.outline,
-                            ),
-                      ),
-                      const SizedBox(height: 16),
-                      FutureBuilder<List<Category>>(
-                        future: _categoriesFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return Text(
-                              'Memuat kategori…',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(color: colorScheme.outline),
-                            );
-                          }
-                          if (snapshot.hasError) {
-                            return const _CategoryFilterError();
-                          }
-                          return _CategoryFilterRow(
-                            categories: snapshot.data ?? const [],
-                            selectedId: _selectedCategoryId,
-                            onSelected: (id) {
-                              setState(() => _selectedCategoryId = id);
-                            },
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'Artikel Terbaru',
-                        style:
-                            Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 19,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPad,
+                      8,
+                      horizontalPad,
+                      24,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).padding.top + 8,
+                        ),
+                        // ── Top bar ala referensi ──
+                        Row(
+                          children: [
+                            CircleIconButton(
+                              icon: Icons.menu,
+                              onTap: () =>
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Menu segera hadir'),
+                                  duration: Duration(seconds: 1),
                                 ),
-                      ),
-                      const SizedBox(height: 12),
-                      FutureBuilder<List<Post>>(
-                        future: _postsFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 64),
-                              child: Center(
-                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                            const Spacer(),
+                            CircleIconButton(
+                              icon: Icons.search,
+                              onTap: widget.onSearchTap ?? widget.onViewAll,
+                            ),
+                            const SizedBox(width: 10),
+                            CircleIconButton(
+                              icon: Icons.notifications_outlined,
+                              showDot: true,
+                              onTap: _openNotifications,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        // Sapaan (dipertahankan untuk kompatibilitas + aksesibilitas)
+                        const Text(
+                          'Selamat datang di NARATA',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: NewsColors.subtitle,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        SectionHeader(
+                          title: 'Breaking News',
+                          onViewAll: widget.onViewAll,
+                        ),
+                        const SizedBox(height: 14),
+                        FutureBuilder<List<Post>>(
+                          future: _postsFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return SizedBox(
+                                height: carouselHeight,
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: NewsColors.primary,
+                                  ),
+                                ),
+                              );
+                            }
+                            if (snapshot.hasError) {
+                              return _PostLoadError(onRetry: _load);
+                            }
+                            final all = _filterByCategory(
+                              snapshot.data ?? const [],
+                            );
+                            if (all.isEmpty) {
+                              return _EmptyState(
+                                hasFilter: _selectedCategoryId != null,
+                                compact: true,
+                              );
+                            }
+                            final breaking = all.take(5).toList();
+                            if (isDesktop) {
+                              return _BreakingGrid(
+                                posts: breaking,
+                                onTap: _openDetail,
+                              );
+                            }
+                            return Column(
+                              children: [
+                                _BreakingCarousel(
+                                  posts: breaking,
+                                  height: carouselHeight,
+                                  index: _carouselIndex,
+                                  onChanged: (i) => setState(
+                                    () => _carouselIndex = i,
+                                  ),
+                                  onTap: _openDetail,
+                                  viewportFraction:
+                                      device == AppDevice.mobile ? 1.0 : 0.82,
+                                ),
+                                const SizedBox(height: 12),
+                                CarouselDots(
+                                  count: breaking.length,
+                                  active: _carouselIndex.clamp(
+                                    0,
+                                    breaking.length - 1,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        // ── Filter kategori (styled pills, tetap "Kategori tidak dapat dimuat" saat error) ──
+                        FutureBuilder<List<Category>>(
+                          future: _categoriesFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 8),
+                                child: Text(
+                                  'Memuat kategori…',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: NewsColors.subtitle,
+                                  ),
+                                ),
+                              );
+                            }
+                            if (snapshot.hasError) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 8),
+                                child: Text(
+                                  'Kategori tidak dapat dimuat',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: NewsColors.subtitle,
+                                  ),
+                                ),
+                              );
+                            }
+                            final cats = snapshot.data ?? const [];
+                            if (cats.isEmpty) {
+                              return const SizedBox.shrink();
+                            }
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.only(top: 8, bottom: 4),
+                              child: CategoryPills(
+                                items: [
+                                  (id: null, label: 'Semua'),
+                                  for (final c in cats)
+                                    (id: c.id, label: c.name),
+                                ],
+                                selectedId: _selectedCategoryId,
+                                onSelected: (id) => setState(() {
+                                  _selectedCategoryId = id;
+                                  _carouselIndex = 0;
+                                }),
                               ),
                             );
-                          }
-                          if (snapshot.hasError) {
-                            return _PostLoadError(onRetry: _load);
-                          }
-
-                          final posts = _filterByCategory(
-                            snapshot.data ?? const [],
-                          );
-                          if (posts.isEmpty) {
-                            return _EmptyState(
-                              hasCategoryFilter:
-                                  _selectedCategoryId != null,
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        SectionHeader(
+                          title: 'Recommendation',
+                          onViewAll: widget.onViewAll,
+                        ),
+                        const SizedBox(height: 6),
+                        FutureBuilder<List<Post>>(
+                          future: _postsFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 40),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    color: NewsColors.primary,
+                                  ),
+                                ),
+                              );
+                            }
+                            if (snapshot.hasError) {
+                              // Pesan ringkas; error utama sudah tampil di Breaking.
+                              // Tetap tampilkan agar konsisten saat list kosong.
+                              return const SizedBox.shrink();
+                            }
+                            final posts = _filterByCategory(
+                              snapshot.data ?? const [],
                             );
-                          }
-
-                          if (useGrid) {
+                            if (posts.isEmpty) {
+                              return _EmptyState(
+                                hasFilter: _selectedCategoryId != null,
+                              );
+                            }
+                            if (device == AppDevice.mobile) {
+                              return ListView.separated(
+                                shrinkWrap: true,
+                                physics:
+                                    const NeverScrollableScrollPhysics(),
+                                itemCount: posts.length,
+                                separatorBuilder: (_, __) =>
+                                    const Divider(
+                                  height: 1,
+                                  thickness: 0.6,
+                                  color: Color(0xFFF0F0F2),
+                                  indent: 110,
+                                ),
+                                itemBuilder: (context, i) => NewsListTile(
+                                  post: posts[i],
+                                  onTap: () => _openDetail(posts[i]),
+                                ),
+                              );
+                            }
+                            final cols = device == AppDevice.tablet ? 2 : 2;
                             return GridView.builder(
                               shrinkWrap: true,
                               physics:
                                   const NeverScrollableScrollPhysics(),
                               itemCount: posts.length,
                               gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                                childAspectRatio: 1.1,
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: cols,
+                                crossAxisSpacing: 20,
+                                mainAxisSpacing: 4,
+                                childAspectRatio:
+                                    device == AppDevice.tablet ? 2.9 : 3.4,
                               ),
-                              itemBuilder: (context, index) => _card(
-                                context,
-                                posts[index],
-                                fixedImageHeight: 150,
+                              itemBuilder: (context, i) => NewsListTile(
+                                post: posts[i],
+                                onTap: () => _openDetail(posts[i]),
+                                thumbnailSize: 92,
                               ),
                             );
-                          }
-
-                          return ListView.separated(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: posts.length,
-                            separatorBuilder: (context, index) =>
-                                const SizedBox(height: 12),
-                            itemBuilder: (context, index) => _card(
-                              context,
-                              posts[index],
-                              maxImageHeight: desktop ? 300 : null,
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -229,199 +387,107 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
-  List<Post> _filterByCategory(List<Post> posts) {
-    if (_selectedCategoryId == null) return posts;
-    return posts
-        .where((post) => post.categoryId == _selectedCategoryId)
-        .toList();
-  }
-
-  Widget _card(
-    BuildContext context,
-    Post post, {
-    double? maxImageHeight,
-    double? fixedImageHeight,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final imageUrl = post.imageUrl;
-    final date = formatPostDate(post.createdAt);
-    final isGrid = fixedImageHeight != null;
-
-    final cover = _buildCover(
-      context,
-      imageUrl,
-      colorScheme,
-      fixedHeight: fixedImageHeight,
-      maxHeight: maxImageHeight,
-    );
-
-    Widget body = Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: isGrid ? MainAxisSize.max : MainAxisSize.min,
-        children: [
-          CategoryBadge(label: post.categoryName),
-          const SizedBox(height: 4),
-          Text(
-            post.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(
-                Icons.calendar_today,
-                size: 13,
-                color: colorScheme.outline,
-              ),
-              const SizedBox(width: 4),
-              if (date.isNotEmpty)
-                Text(
-                  date,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.outline,
-                      ),
-                ),
-              const Spacer(),
-              Icon(
-                Icons.arrow_forward,
-                size: 16,
-                color: colorScheme.primary,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-
-    if (isGrid) {
-      body = Expanded(child: body);
-    }
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: InkWell(
-        onTap: () => _openDetail(post),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: isGrid ? MainAxisSize.max : MainAxisSize.min,
-          children: [
-            ?cover,
-            body,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget? _buildCover(
-    BuildContext context,
-    String? imageUrl,
-    ColorScheme colorScheme, {
-    double? fixedHeight,
-    double? maxHeight,
-  }) {
-    if (imageUrl == null) return null;
-
-    final image = Image.network(
-      imageUrl,
-      width: double.infinity,
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, progress) {
-        if (progress == null) return child;
-        return const Center(child: CircularProgressIndicator());
-      },
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          color: colorScheme.surfaceContainerHighest,
-          child: const Center(
-            child: Icon(Icons.image_not_supported, size: 40),
-          ),
-        );
-      },
-    );
-
-    if (fixedHeight != null) {
-      return SizedBox(height: fixedHeight, child: image);
-    }
-    if (maxHeight != null) {
-      return ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxHeight),
-        child: image,
-      );
-    }
-    return image;
-  }
 }
 
-class _CategoryFilterRow extends StatelessWidget {
-  final List<Category> categories;
-  final int? selectedId;
-  final ValueChanged<int?> onSelected;
+class _BreakingCarousel extends StatefulWidget {
+  final List<Post> posts;
+  final double height;
+  final int index;
+  final ValueChanged<int> onChanged;
+  final ValueChanged<Post> onTap;
+  final double viewportFraction;
 
-  const _CategoryFilterRow({
-    required this.categories,
-    required this.selectedId,
-    required this.onSelected,
+  const _BreakingCarousel({
+    required this.posts,
+    required this.height,
+    required this.index,
+    required this.onChanged,
+    required this.onTap,
+    this.viewportFraction = 1.0,
   });
 
   @override
+  State<_BreakingCarousel> createState() => _BreakingCarouselState();
+}
+
+class _BreakingCarouselState extends State<_BreakingCarousel> {
+  late final PageController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PageController(viewportFraction: widget.viewportFraction);
+  }
+
+  @override
+  void didUpdateWidget(_BreakingCarousel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.viewportFraction != widget.viewportFraction) {
+      _controller.dispose();
+      _controller =
+          PageController(viewportFraction: widget.viewportFraction);
+    }
+    if (oldWidget.posts.length != widget.posts.length) {
+      if (_controller.hasClients) _controller.jumpToPage(0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          ChoiceChip(
-            label: const Text('Semua'),
-            selected: selectedId == null,
-            onSelected: (_) => onSelected(null),
-          ),
-          for (final category in categories)
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: ChoiceChip(
-                label: Text(category.name),
-                selected: selectedId == category.id,
-                onSelected: (_) => onSelected(category.id),
-              ),
+    return SizedBox(
+      height: widget.height,
+      child: PageView.builder(
+        controller: _controller,
+        itemCount: widget.posts.length,
+        onPageChanged: widget.onChanged,
+        itemBuilder: (context, i) {
+          final pad = widget.viewportFraction < 1.0
+              ? const EdgeInsets.symmetric(horizontal: 6)
+              : EdgeInsets.zero;
+          return Padding(
+            padding: pad,
+            child: BreakingNewsCard(
+              post: widget.posts[i],
+              height: widget.height,
+              onTap: () => widget.onTap(widget.posts[i]),
             ),
-        ],
+          );
+        },
       ),
     );
   }
 }
 
-class _CategoryFilterError extends StatelessWidget {
-  const _CategoryFilterError();
+class _BreakingGrid extends StatelessWidget {
+  final List<Post> posts;
+  final ValueChanged<Post> onTap;
+
+  const _BreakingGrid({required this.posts, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Row(
-      children: [
-        Icon(Icons.cloud_off_outlined, size: 18, color: colorScheme.outline),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            'Kategori tidak dapat dimuat',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: colorScheme.outline),
-          ),
-        ),
-      ],
+    final show = posts.take(3).toList();
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: show.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: show.length >= 3 ? 3 : show.length,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 1.55,
+      ),
+      itemBuilder: (context, i) => BreakingNewsCard(
+        post: show[i],
+        height: 220,
+        onTap: () => onTap(show[i]),
+      ),
     );
   }
 }
@@ -433,69 +499,68 @@ class _PostLoadError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Center(
-        child: Column(
-          children: [
-            Text(
-              'Gagal memuat artikel',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Pastikan backend NARATA sedang berjalan.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Coba lagi'),
-            ),
-          ],
-        ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F7F8),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'Gagal memuat artikel',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Pastikan backend NARATA sedang berjalan.',
+            style: TextStyle(fontSize: 12, color: NewsColors.subtitle),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Coba lagi'),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _EmptyState extends StatelessWidget {
-  final bool hasCategoryFilter;
+  final bool hasFilter;
+  final bool compact;
 
-  const _EmptyState({required this.hasCategoryFilter});
+  const _EmptyState({required this.hasFilter, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
+      padding: EdgeInsets.symmetric(vertical: compact ? 24 : 40),
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.article_outlined, size: 48, color: colorScheme.outline),
-            const SizedBox(height: 12),
+            const Icon(
+              Icons.article_outlined,
+              size: 44,
+              color: NewsColors.muted,
+            ),
+            const SizedBox(height: 10),
             Text(
-              hasCategoryFilter
+              hasFilter
                   ? 'Tidak ada artikel pada kategori ini'
                   : 'Belum ada artikel',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 4),
-            Text(
-              hasCategoryFilter
-                  ? 'Pilih kategori lain untuk melihat artikel.'
-                  : 'Tambahkan artikel pertama.',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: colorScheme.outline),
+            const Text(
+              'Pilih kategori lain atau tambahkan artikel.',
+              style: TextStyle(fontSize: 12, color: NewsColors.subtitle),
             ),
           ],
         ),
