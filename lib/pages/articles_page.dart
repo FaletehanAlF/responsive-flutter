@@ -4,8 +4,8 @@ import '../models/category.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
 import '../utils/formatters.dart';
-import '../widgets/category_badge.dart';
-import '../widgets/narata_app_bar.dart';
+import '../utils/news_theme.dart';
+import '../widgets/news_widgets.dart';
 import 'detail_page.dart';
 
 class ArticlesPage extends StatefulWidget {
@@ -72,7 +72,9 @@ class _ArticlesPageState extends State<ArticlesPage> {
 
   Future<void> _refresh() async {
     _load();
-    await Future.wait([_postsFuture, _categoriesFuture]);
+    try {
+      await Future.wait([_postsFuture, _categoriesFuture]);
+    } catch (_) {}
   }
 
   void _onSearchChanged() {
@@ -99,7 +101,6 @@ class _ArticlesPageState extends State<ArticlesPage> {
       onOpenDetail(post.id);
       return;
     }
-
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => DetailPage(postId: post.id)),
@@ -108,60 +109,115 @@ class _ArticlesPageState extends State<ArticlesPage> {
     if (result == true) _load();
   }
 
+  void _onFilterTap() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Filter lanjutan segera hadir'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: const NarataAppBar(title: Text('Semua Artikel')),
+      backgroundColor: Colors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final bool useGrid = constraints.maxWidth >= 1100;
-          final bool isDesktop = constraints.maxWidth >= 600;
-          final double cap = useGrid ? 1100 : (isDesktop ? 760 : double.infinity);
+          final maxW = constraints.maxWidth;
+          final device = deviceForWidth(maxW);
+          final contentMax = contentMaxWidth(maxW, desktop: 1100);
+          final canPop = Navigator.of(context).canPop();
+
+          final horizontalPad = device == AppDevice.mobile ? 20.0 : 24.0;
 
           return RefreshIndicator(
+            color: NewsColors.primary,
             onRefresh: _refresh,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(vertical: 20),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: cap),
+                  constraints: BoxConstraints(
+                    maxWidth: contentMax == double.infinity
+                        ? double.infinity
+                        : contentMax,
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.fromLTRB(
+                      horizontalPad,
+                      8,
+                      horizontalPad,
+                      24,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        SizedBox(
+                          height: MediaQuery.of(context).padding.top + 8,
+                        ),
+                        // ── Top row: back (jika bisa) ──
+                        if (canPop)
+                          CircleIconButton(
+                            icon: Icons.arrow_back,
+                            onTap: () => Navigator.of(context).maybePop(),
+                          )
+                        else
+                          const SizedBox(height: 44 - 8),
+                        const SizedBox(height: 12),
+                        // Label kompatibilitas + judul Discover
+                        const Text(
                           'Semua Artikel',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: NewsColors.subtitle,
+                            letterSpacing: 0.2,
+                          ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          'Kelola seluruh artikel yang tersimpan.',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(color: colorScheme.outline),
+                        const Text(
+                          'Discover',
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w800,
+                            color: NewsColors.ink,
+                            letterSpacing: -0.8,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'News from all around the world',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            color: NewsColors.subtitle,
+                          ),
                         ),
                         const SizedBox(height: 16),
-                        _buildSearchField(context, colorScheme),
-                        const SizedBox(height: 12),
+                        DiscoverSearchBar(
+                          controller: searchController,
+                          onFilterTap: _onFilterTap,
+                        ),
+                        const SizedBox(height: 14),
                         FutureBuilder<List<Category>>(
                           future: _categoriesFuture,
                           builder: (context, snapshot) {
                             if (snapshot.hasError) {
                               return const SizedBox.shrink();
                             }
-                            return _CategoryFilterRow(
-                              categories: snapshot.data ?? const [],
+                            final cats =
+                                snapshot.data ?? const <Category>[];
+                            return CategoryPills(
+                              items: [
+                                (id: null, label: 'All'),
+                                for (final c in cats)
+                                  (id: c.id, label: c.name),
+                              ],
                               selectedId: _selectedCategoryId,
-                              onSelected: (id) {
-                                setState(() => _selectedCategoryId = id);
-                              },
+                              onSelected: (id) => setState(
+                                () => _selectedCategoryId = id,
+                              ),
                             );
                           },
                         ),
@@ -174,7 +230,9 @@ class _ArticlesPageState extends State<ArticlesPage> {
                               return const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 64),
                                 child: Center(
-                                  child: CircularProgressIndicator(),
+                                  child: CircularProgressIndicator(
+                                    color: NewsColors.primary,
+                                  ),
                                 ),
                               );
                             }
@@ -203,45 +261,57 @@ class _ArticlesPageState extends State<ArticlesPage> {
                               children: [
                                 Text(
                                   '${filtered.length} artikel ditemukan',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: colorScheme.outline,
-                                      ),
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    color: NewsColors.subtitle,
+                                  ),
                                 ),
-                                const SizedBox(height: 8),
-                                if (useGrid)
+                                const SizedBox(height: 6),
+                                if (device == AppDevice.mobile)
+                                  ListView.separated(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: filtered.length,
+                                    separatorBuilder: (_, __) =>
+                                        const Divider(
+                                      height: 1,
+                                      thickness: 0.6,
+                                      color: Color(0xFFF0F0F2),
+                                      indent: 112,
+                                    ),
+                                    itemBuilder: (context, i) {
+                                      final post = filtered[i];
+                                      return _DiscoverTile(
+                                        post: post,
+                                        onTap: () => _openDetail(post),
+                                      );
+                                    },
+                                  )
+                                else
                                   GridView.builder(
                                     shrinkWrap: true,
                                     physics:
                                         const NeverScrollableScrollPhysics(),
                                     itemCount: filtered.length,
                                     gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      crossAxisSpacing: 12,
-                                      mainAxisSpacing: 12,
-                                      childAspectRatio: 1.05,
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount:
+                                          device == AppDevice.tablet ? 2 : 2,
+                                      crossAxisSpacing: 20,
+                                      mainAxisSpacing: 4,
+                                      childAspectRatio:
+                                          device == AppDevice.tablet
+                                              ? 2.9
+                                              : 3.4,
                                     ),
-                                    itemBuilder: (context, index) => _gridCard(
-                                      context,
-                                      filtered[index],
-                                    ),
-                                  )
-                                else
-                                  ListView.separated(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount: filtered.length,
-                                    separatorBuilder: (context, index) =>
-                                        const SizedBox(height: 12),
-                                    itemBuilder: (context, index) => _listCard(
-                                      context,
-                                      filtered[index],
-                                      maxImageHeight: isDesktop ? 280 : null,
-                                    ),
+                                    itemBuilder: (context, i) {
+                                      final post = filtered[i];
+                                      return _DiscoverTile(
+                                        post: post,
+                                        onTap: () => _openDetail(post),
+                                      );
+                                    },
                                   ),
                               ],
                             );
@@ -258,222 +328,18 @@ class _ArticlesPageState extends State<ArticlesPage> {
       ),
     );
   }
-
-  Widget _buildSearchField(BuildContext context, ColorScheme colorScheme) {
-    return TextField(
-      controller: searchController,
-      textInputAction: TextInputAction.search,
-      decoration: InputDecoration(
-        hintText: 'Cari judul atau isi artikel…',
-        prefixIcon: const Icon(Icons.search),
-        filled: true,
-        fillColor: colorScheme.surfaceContainerLow,
-        suffixIcon: _keyword.isEmpty
-            ? null
-            : IconButton(
-                tooltip: 'Bersihkan',
-                icon: const Icon(Icons.clear),
-                onPressed: searchController.clear,
-              ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-    );
-  }
-
-  Widget _cardShell(Post post, Widget child) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: InkWell(
-        onTap: () => _openDetail(post),
-        child: child,
-      ),
-    );
-  }
-
-  Widget _coverImage(
-    BuildContext context,
-    String imageUrl, {
-    double? height,
-  }) {
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: Image.network(
-        imageUrl,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return const Center(child: CircularProgressIndicator());
-        },
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: const Center(
-              child: Icon(Icons.image_not_supported, size: 40),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _metaRow(BuildContext context, Post post) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final date = formatPostDate(post.createdAt);
-    return Row(
-      children: [
-        if (date.isNotEmpty) ...[
-          Icon(Icons.calendar_today, size: 13, color: colorScheme.outline),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              date,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: colorScheme.outline),
-            ),
-          ),
-        ] else
-          const Spacer(),
-        Icon(Icons.arrow_forward, size: 18, color: colorScheme.primary),
-      ],
-    );
-  }
-
-  Widget _listCard(BuildContext context, Post post, {double? maxImageHeight}) {
-    final imageUrl = post.imageUrl;
-    return _cardShell(
-      post,
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (imageUrl != null)
-            _coverImage(context, imageUrl, height: maxImageHeight),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CategoryBadge(label: post.categoryName),
-                const SizedBox(height: 6),
-                Text(
-                  post.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  post.snippet,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 10),
-                _metaRow(context, post),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _gridCard(BuildContext context, Post post) {
-    final imageUrl = post.imageUrl;
-    return _cardShell(
-      post,
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (imageUrl != null) _coverImage(context, imageUrl, height: 150),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CategoryBadge(label: post.categoryName),
-                  const SizedBox(height: 4),
-                  Text(
-                    post.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    post.snippet,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const Spacer(),
-                  _metaRow(context, post),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-class _CategoryFilterRow extends StatelessWidget {
-  final List<Category> categories;
-  final int? selectedId;
-  final ValueChanged<int?> onSelected;
+/// Tile Discover: kategori kecil → judul → author • tanggal (thumbnail kiri).
+class _DiscoverTile extends StatelessWidget {
+  final Post post;
+  final VoidCallback onTap;
 
-  const _CategoryFilterRow({
-    required this.categories,
-    required this.selectedId,
-    required this.onSelected,
-  });
+  const _DiscoverTile({required this.post, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    if (categories.isEmpty && selectedId == null) {
-      return const SizedBox.shrink();
-    }
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          ChoiceChip(
-            label: const Text('Semua'),
-            selected: selectedId == null,
-            onSelected: (_) => onSelected(null),
-          ),
-          for (final category in categories)
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: ChoiceChip(
-                label: Text(category.name),
-                selected: selectedId == category.id,
-                onSelected: (_) => onSelected(category.id),
-              ),
-            ),
-        ],
-      ),
-    );
+    final post = this.post;
   }
 }
 
@@ -495,24 +361,27 @@ class _LoadError extends StatelessWidget {
       child: Center(
         child: Column(
           children: [
-            Icon(
+            const Icon(
               Icons.cloud_off_outlined,
               size: 48,
-              color: Theme.of(context).colorScheme.outline,
+              color: NewsColors.muted,
             ),
             const SizedBox(height: 12),
             Text(
               message,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               detail,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: const TextStyle(
+                fontSize: 13,
+                color: NewsColors.subtitle,
+              ),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -534,7 +403,6 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: Center(
@@ -542,23 +410,23 @@ class _EmptyState extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerLow,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF1F2F4),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 isSearching ? Icons.search_off : Icons.article_outlined,
                 size: 44,
-                color: colorScheme.outline,
+                color: NewsColors.muted,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               isSearching ? 'Artikel tidak ditemukan' : 'Belum ada artikel',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 6),
             Text(
@@ -566,10 +434,10 @@ class _EmptyState extends StatelessWidget {
                   ? 'Ubah kata kunci atau filter kategori.'
                   : 'Tambahkan artikel pertama untuk mulai mengisi NARATA.',
               textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: colorScheme.outline),
+              style: const TextStyle(
+                fontSize: 13,
+                color: NewsColors.subtitle,
+              ),
             ),
           ],
         ),
