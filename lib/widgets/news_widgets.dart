@@ -172,6 +172,8 @@ class SectionHeader extends StatelessWidget {
             ),
           ),
         ),
+        // View all hanya tampil bila ada aksinya (mis. disembunyikan
+        // pada Breaking News, tetap tampil pada Recommendation).
         if (onViewAll != null)
           GestureDetector(
             onTap: onViewAll,
@@ -182,15 +184,6 @@ class SectionHeader extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: NewsColors.primary,
               ),
-            ),
-          )
-        else
-          const Text(
-            'View all',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: NewsColors.primary,
             ),
           ),
       ],

@@ -162,7 +162,6 @@ class _HomePageState extends State<HomePage> {
                         const SizedBox(height: 10),
                         SectionHeader(
                           title: 'Breaking News',
-                          onViewAll: widget.onViewAll,
                         ),
                         const SizedBox(height: 14),
                         FutureBuilder<List<Post>>(
