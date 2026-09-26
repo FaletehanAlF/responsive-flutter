@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/category.dart';
 import '../services/api_service.dart';
-import '../widgets/narata_app_bar.dart';
+import '../widgets/news_widgets.dart';
 
 class CategoryPage extends StatefulWidget {
   final ApiService? apiService;

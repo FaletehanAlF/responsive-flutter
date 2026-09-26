@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/category.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
-import '../widgets/narata_app_bar.dart';
+import '../widgets/news_widgets.dart';
 
 class EditPostPage extends StatefulWidget {
   final Post post;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../widgets/narata_app_bar.dart';
+import '../widgets/news_widgets.dart';
 
 class NotificationPage extends StatelessWidget {
   const NotificationPage({super.key});
