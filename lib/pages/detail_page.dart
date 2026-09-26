@@ -203,15 +203,10 @@ class _DetailPageState extends State<DetailPage> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
             backgroundColor: Colors.white,
-            appBar: AppBar(
-              backgroundColor: Colors.white,
-              elevation: 0,
-              leading: IconButton(
-                tooltip: 'Kembali',
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => _close(false),
-              ),
-              title: const Text('Memuat artikel…'),
+            appBar: NewsAppBar(
+              title: 'Memuat artikel…',
+              showBack: true,
+              onBack: () => _close(false),
             ),
             body: const Center(
               child: CircularProgressIndicator(color: NewsColors.primary),
@@ -226,15 +221,10 @@ class _DetailPageState extends State<DetailPage> {
                   err.contains('404');
           return Scaffold(
             backgroundColor: Colors.white,
-            appBar: AppBar(
-              backgroundColor: Colors.white,
-              elevation: 0,
-              leading: IconButton(
-                tooltip: 'Kembali',
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => _close(false),
-              ),
-              title: const Text('Detail Artikel'),
+            appBar: NewsAppBar(
+              title: 'Detail Artikel',
+              showBack: true,
+              onBack: () => _close(false),
             ),
             body: SafeArea(
               child: Center(
@@ -293,15 +283,10 @@ class _DetailPageState extends State<DetailPage> {
         if (post == null) {
           return Scaffold(
             backgroundColor: Colors.white,
-            appBar: AppBar(
-              backgroundColor: Colors.white,
-              elevation: 0,
-              leading: IconButton(
-                tooltip: 'Kembali',
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => _close(false),
-              ),
-              title: const Text('Detail Artikel'),
+            appBar: NewsAppBar(
+              title: 'Detail Artikel',
+              showBack: true,
+              onBack: () => _close(false),
             ),
             body: SafeArea(
               child: Center(
