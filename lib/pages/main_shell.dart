@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../utils/news_theme.dart';
 import 'add_post_page.dart';
 import 'articles_page.dart';
 import 'detail_page.dart';
@@ -44,6 +45,8 @@ class _MainShellState extends State<MainShell> {
     });
   }
 
+  void _goToArticles() => _select(1);
+
   void _openDetail(int id) {
     setState(() => _detailPostId = id);
   }
@@ -69,7 +72,12 @@ class _MainShellState extends State<MainShell> {
     return IndexedStack(
       index: _index,
       children: [
-        HomePage(refreshSignal: _dataVersion, onOpenDetail: _openDetail),
+        HomePage(
+          refreshSignal: _dataVersion,
+          onOpenDetail: _openDetail,
+          onViewAll: _goToArticles,
+          onSearchTap: _goToArticles,
+        ),
         ArticlesPage(
           refreshSignal: _dataVersion,
           onOpenDetail: _openDetail,
@@ -89,7 +97,9 @@ class _MainShellState extends State<MainShell> {
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final bool isDesktop = constraints.maxWidth >= 600;
+          // Mobile + tablet (<1024) pakai bottom nav ala referensi,
+          // desktop (>=1024) pakai rail.
+          final bool isDesktop = constraints.maxWidth >= 1024;
           return isDesktop ? _buildDesktop() : _buildMobile();
         },
       ),
@@ -97,33 +107,69 @@ class _MainShellState extends State<MainShell> {
   }
 
   Widget _buildMobile() {
+    // Saat detail dibuka, tampilkan full-screen tanpa bottom nav
+    // agar meniru referensi (hero + bottom sheet).
+    if (_detailPostId != null) {
+      return Scaffold(body: _buildBody());
+    }
     return Scaffold(
+      backgroundColor: Colors.white,
       body: _buildBody(),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: _select,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Beranda',
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1A000000),
+                blurRadius: 24,
+                offset: Offset(0, 8),
+              ),
+            ],
+            border: Border.all(color: Color(0xFFF0F0F2)),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.article_outlined),
-            selectedIcon: Icon(Icons.article),
-            label: 'Artikel',
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: NavigationBar(
+              backgroundColor: Colors.white,
+              indicatorColor: NewsColors.primary,
+              height: 68,
+              labelBehavior:
+                  NavigationDestinationLabelBehavior.onlyShowSelected,
+              selectedIndex: _index,
+              onDestinationSelected: _select,
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.public_outlined, color: Color(0xFF9AA0A6)),
+                  selectedIcon: Icon(Icons.home, color: Colors.white),
+                  label: 'Beranda',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.public_outlined, color: Color(0xFF9AA0A6)),
+                  selectedIcon:
+                      Icon(Icons.article, color: Colors.white),
+                  label: 'Artikel',
+                ),
+                NavigationDestination(
+                  icon:
+                      Icon(Icons.bookmark_border, color: Color(0xFF9AA0A6)),
+                  selectedIcon:
+                      Icon(Icons.add_circle, color: Colors.white),
+                  label: 'Tambah',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.person_outline, color: Color(0xFF9AA0A6)),
+                  selectedIcon:
+                      Icon(Icons.settings, color: Colors.white),
+                  label: 'Pengaturan',
+                ),
+              ],
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.add_circle_outline),
-            selectedIcon: Icon(Icons.add_circle),
-            label: 'Tambah',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Pengaturan',
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -139,11 +185,12 @@ class _MainShellState extends State<MainShell> {
             selectedIndex: _index,
             onDestinationSelected: _select,
             groupAlignment: -1.0,
-            backgroundColor: colorScheme.surface,
-            indicatorColor: colorScheme.primaryContainer,
-            selectedIconTheme: IconThemeData(color: colorScheme.primary),
-            selectedLabelTextStyle: TextStyle(
-              color: colorScheme.primary,
+            backgroundColor: Colors.white,
+            indicatorColor: NewsColors.primary.withValues(alpha: 0.12),
+            selectedIconTheme:
+                const IconThemeData(color: NewsColors.primary),
+            selectedLabelTextStyle: const TextStyle(
+              color: NewsColors.primary,
               fontWeight: FontWeight.w700,
             ),
             leading: const Padding(

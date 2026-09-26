@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/category.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
-import '../utils/formatters.dart';
 import '../utils/news_theme.dart';
 import '../widgets/news_widgets.dart';
 import 'detail_page.dart';
@@ -339,7 +338,7 @@ class _DiscoverTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final post = this.post;
+    return NewsListTile(post: post, onTap: onTap, thumbnailSize: 96);
   }
 }
 
