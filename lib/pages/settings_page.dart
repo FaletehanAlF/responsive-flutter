@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../utils/news_theme.dart';
 import '../widgets/news_widgets.dart';
 import 'category_page.dart';
 import 'profile_page.dart';
@@ -16,6 +17,9 @@ class SettingsPage extends StatelessWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
           title: const Text('Tentang NARATA'),
           content: const Column(
             mainAxisSize: MainAxisSize.min,
@@ -48,163 +52,156 @@ class SettingsPage extends StatelessWidget {
     onDataChanged?.call();
   }
 
-  Widget _sectionTitle(BuildContext context, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.titleMedium
-            ?.copyWith(fontWeight: FontWeight.w600),
-      ),
+  void _openProfile(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ProfilePage()),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
+      backgroundColor: const Color(0xFFF6F6F7),
       appBar: NewsAppBar(
         title: 'Pengaturan',
-        onProfile: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ProfilePage()),
-        ),
+        onProfile: () => _openProfile(context),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final bool desktop = constraints.maxWidth >= 600;
+          final device = deviceForWidth(constraints.maxWidth);
+          final contentMax =
+              device == AppDevice.mobile ? double.infinity : 720.0;
           return SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: desktop ? 24 : 16,
-              vertical: 20,
-            ),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             child: Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: desktop ? 760 : double.infinity,
-                ),
+                constraints: BoxConstraints(maxWidth: contentMax),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      'Pengaturan',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Kelola pengaturan dan informasi aplikasi.',
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: colorScheme.outline),
-                    ),
-                    const SizedBox(height: 20),
-                    _sectionTitle(context, 'NARATA'),
-                    Card(
-                      elevation: 0,
-                      color: colorScheme.surfaceContainerLow,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(color: colorScheme.outlineVariant),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primaryContainer,
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Icon(
-                                Icons.newspaper_outlined,
-                                size: 30,
-                                color: colorScheme.onPrimaryContainer,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'NARATA',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 1.2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Blog Management • Versi $kAppVersion',
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(color: colorScheme.outline),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                    // ── Kartu identitas aplikasi ──
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF1E88FF), Color(0xFF0F5FCC)],
                         ),
+                        borderRadius: BorderRadius.circular(24),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    _sectionTitle(context, 'Pengaturan'),
-                    Card(
-                      elevation: 1,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Column(
+                      child: Row(
                         children: [
-                          ListTile(
-                            leading: const Icon(Icons.category_outlined),
-                            title: const Text('Kelola Kategori'),
-                            subtitle: const Text(
-                              'Tambah, edit, dan hapus kategori artikel.',
+                          Container(
+                            width: 58,
+                            height: 58,
+                            decoration: BoxDecoration(
+                              color:
+                                  Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(18),
                             ),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => _openCategories(context),
+                            alignment: Alignment.center,
+                            child: const Text(
+                              'N',
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                                letterSpacing: 1.0,
+                              ),
+                            ),
                           ),
-                          const Divider(height: 1, indent: 16, endIndent: 16),
-                          ListTile(
-                            leading: const Icon(Icons.info_outline),
-                            title: const Text('Tentang NARATA'),
-                            subtitle: const Text('Informasi aplikasi.'),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => _showAbout(context),
+                          const SizedBox(width: 16),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'NARATA',
+                                  style: TextStyle(
+                                    fontSize: 21,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                                SizedBox(height: 3),
+                                Text(
+                                  'Blog Management • Versi $kAppVersion',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    _sectionTitle(context, 'Informasi Aplikasi'),
-                    Card(
-                      elevation: 0,
-                      color: colorScheme.surfaceContainerLow,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        side: BorderSide(color: colorScheme.outlineVariant),
+                    const SizedBox(height: 18),
+                    const _GroupLabel(text: 'Umum'),
+                    const SizedBox(height: 8),
+                    // ── Menu utama ──
+                    _MenuCard(
+                      children: [
+                        _MenuTile(
+                          icon: Icons.category_outlined,
+                          tint: NewsColors.primary,
+                          title: 'Kelola Kategori',
+                          subtitle:
+                              'Tambah, edit, dan hapus kategori artikel.',
+                          onTap: () => _openCategories(context),
+                        ),
+                        const _MenuDivider(),
+                        _MenuTile(
+                          icon: Icons.person_outline,
+                          tint: Color(0xFF7C4DFF),
+                          title: 'Profil Saya',
+                          subtitle: 'Lihat informasi akunmu.',
+                          onTap: () => _openProfile(context),
+                        ),
+                        const _MenuDivider(),
+                        _MenuTile(
+                          icon: Icons.info_outline,
+                          tint: Color(0xFFFF7043),
+                          title: 'Tentang NARATA',
+                          subtitle: 'Informasi aplikasi.',
+                          onTap: () => _showAbout(context),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    const _GroupLabel(text: 'Informasi Aplikasi'),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 6,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFFF0F0F2),
                         ),
-                        child: Column(
-                          children: [
-                            _infoRow(context, 'Versi', kAppVersion),
-                            const SizedBox(height: 8),
-                            _infoRow(
-                              context,
-                              'Sistem',
-                              'Blog Management System',
-                            ),
-                          ],
-                        ),
+                      ),
+                      child: const Column(
+                        children: [
+                          _InfoRow(label: 'Versi', value: kAppVersion),
+                          Divider(
+                            height: 1,
+                            thickness: 0.6,
+                            color: Color(0xFFF0F0F2),
+                          ),
+                          _InfoRow(
+                            label: 'Sistem',
+                            value: 'Blog Management System',
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 8),
                   ],
                 ),
               ),
@@ -214,17 +211,178 @@ class SettingsPage extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _infoRow(BuildContext context, String label, String value) {
-    return Row(
-      children: [
-        Expanded(child: Text(label)),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(fontWeight: FontWeight.w600),
+class _GroupLabel extends StatelessWidget {
+  final String text;
+
+  const _GroupLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        text.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: NewsColors.subtitle,
+          letterSpacing: 0.8,
         ),
-      ],
+      ),
+    );
+  }
+}
+
+class _MenuCard extends StatelessWidget {
+  final List<Widget> children;
+
+  const _MenuCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF0F0F2)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _MenuTile extends StatelessWidget {
+  final IconData icon;
+  final Color tint;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _MenuTile({
+    required this.icon,
+    required this.tint,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: tint.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, size: 22, color: tint),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: NewsColors.ink,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: NewsColors.subtitle,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: Color(0xFFC9CDD3),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuDivider extends StatelessWidget {
+  const _MenuDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Divider(
+      height: 1,
+      thickness: 0.6,
+      color: Color(0xFFF0F0F2),
+      indent: 74,
+      endIndent: 16,
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13.5,
+                color: NewsColors.subtitle,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              color: NewsColors.ink,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
