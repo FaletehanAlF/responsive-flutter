@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
               return const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: Colors.white,
+                color: Color(0xFF1877F2),
               );
             }
             return const TextStyle(

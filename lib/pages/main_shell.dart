@@ -143,12 +143,12 @@ class _MainShellState extends State<MainShell> {
               onDestinationSelected: _select,
               destinations: const [
                 NavigationDestination(
-                  icon: Icon(Icons.public_outlined, color: Color(0xFF9AA0A6)),
+                  icon: Icon(Icons.home_outlined, color: Color(0xFF9AA0A6)),
                   selectedIcon: Icon(Icons.home, color: Colors.white),
                   label: 'Beranda',
                 ),
                 NavigationDestination(
-                  icon: Icon(Icons.public_outlined, color: Color(0xFF9AA0A6)),
+                  icon: Icon(Icons.article_outlined, color: Color(0xFF9AA0A6)),
                   selectedIcon:
                       Icon(Icons.article, color: Colors.white),
                   label: 'Artikel',
