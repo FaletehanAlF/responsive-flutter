@@ -139,9 +139,11 @@ class _AddPostPageState extends State<AddPostPage> {
   void _resetForm() {
     _titleController.clear();
     _contentController.clear();
+    _imageUrlController.clear();
     setState(() {
       _selectedImage = null;
       _previewFuture = null;
+      _showUrlField = false;
       _selectedCategoryId = null;
       _titleError = null;
       _contentError = null;
@@ -149,9 +151,28 @@ class _AddPostPageState extends State<AddPostPage> {
     });
   }
 
+  /// Link gambar yang ditempel user. Hanya dipakai bila tidak ada file.
+  String? get _pastedImageUrl {
+    final url = _imageUrlController.text.trim();
+    return url.isEmpty ? null : url;
+  }
+
+  bool _validateImageUrl() {
+    final url = _pastedImageUrl;
+    if (_selectedImage == null &&
+        url != null &&
+        !url.startsWith('http://') &&
+        !url.startsWith('https://')) {
+      _showMessage('Link gambar harus diawali http:// atau https://');
+      return false;
+    }
+    return true;
+  }
+
   Future<void> _submit() async {
     if (_isSubmitting) return;
     if (!_validate()) return;
+    if (!_validateImageUrl()) return;
 
     setState(() => _isSubmitting = true);
 
@@ -161,6 +182,7 @@ class _AddPostPageState extends State<AddPostPage> {
         content: _contentController.text.trim(),
         categoryId: _selectedCategoryId!,
         image: _selectedImage,
+        imageUrl: _selectedImage == null ? _pastedImageUrl : null,
       );
 
       if (!mounted) return;
@@ -416,18 +438,57 @@ class _AddPostPageState extends State<AddPostPage> {
   }
 
   Widget _buildImagePicker(BuildContext context) {
-    return ImageDropZone(
-      image: _selectedImage,
-      previewFuture: _previewFuture,
-      onPick: _pickImage,
-      onDroppedFile: _handleNewFile,
-      onDropError: _showMessage,
-      onRemove: () {
-        setState(() {
-          _selectedImage = null;
-          _previewFuture = null;
-        });
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ImageDropZone(
+          image: _selectedImage,
+          // Preview link yang ditempel (kalah prioritas dari file).
+          imageUrl: _selectedImage == null ? _pastedImageUrl : null,
+          previewFuture: _previewFuture,
+          onPick: _pickImage,
+          onDroppedFile: _handleNewFile,
+          onDropError: _showMessage,
+          onRemove: () {
+            setState(() {
+              _selectedImage = null;
+              _previewFuture = null;
+            });
+          },
+        ),
+        const SizedBox(height: 6),
+        Align(
+          alignment: Alignment.center,
+          child: TextButton.icon(
+            onPressed: () => setState(() {
+              _showUrlField = !_showUrlField;
+              if (!_showUrlField) _imageUrlController.clear();
+            }),
+            icon: const Icon(Icons.link, size: 16),
+            label: Text(
+              _showUrlField ? 'Tutup kolom link' : 'atau tempel link gambar',
+            ),
+          ),
+        ),
+        if (_showUrlField)
+          TextField(
+            controller: _imageUrlController,
+            keyboardType: TextInputType.url,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: 'https://contoh.com/gambar.jpg',
+              prefixIcon: const Icon(Icons.link),
+              suffixIcon: _imageUrlController.text.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => setState(_imageUrlController.clear),
+                    ),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+      ],
     );
   }
 }

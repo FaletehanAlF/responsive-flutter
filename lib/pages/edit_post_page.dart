@@ -24,6 +24,7 @@ class _EditPostPageState extends State<EditPostPage> {
 
   late final TextEditingController _titleController;
   late final TextEditingController _contentController;
+  late final TextEditingController _imageUrlController;
 
   List<Category> _categories = const [];
   int? _selectedCategoryId;
@@ -31,6 +32,7 @@ class _EditPostPageState extends State<EditPostPage> {
   XFile? _newImage;
   Future<Uint8List>? _previewFuture;
   bool _removeExistingImage = false;
+  bool _showUrlField = false;
 
   String? _titleError;
   String? _contentError;
@@ -44,6 +46,7 @@ class _EditPostPageState extends State<EditPostPage> {
     super.initState();
     _titleController = TextEditingController(text: widget.post.title);
     _contentController = TextEditingController(text: widget.post.content);
+    _imageUrlController = TextEditingController();
     _loadCategories();
   }
 
@@ -51,6 +54,7 @@ class _EditPostPageState extends State<EditPostPage> {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
+    _imageUrlController.dispose();
     super.dispose();
   }
 
@@ -112,6 +116,8 @@ class _EditPostPageState extends State<EditPostPage> {
       // Bytes sudah di tangan, langsung pakai agar preview tampil seketika.
       _previewFuture = Future.value(bytes);
       _removeExistingImage = false;
+      // File menang atas link: kosongkan link agar tidak konflik.
+      _imageUrlController.clear();
     });
   }
 
@@ -160,9 +166,28 @@ class _EditPostPageState extends State<EditPostPage> {
     return _titleError == null && _contentError == null && _categoryError == null;
   }
 
+  /// Link gambar yang ditempel user. Hanya dipakai bila tidak ada file baru.
+  String? get _pastedImageUrl {
+    final url = _imageUrlController.text.trim();
+    return url.isEmpty ? null : url;
+  }
+
+  bool _validateImageUrl() {
+    final url = _pastedImageUrl;
+    if (_newImage == null &&
+        url != null &&
+        !url.startsWith('http://') &&
+        !url.startsWith('https://')) {
+      _showMessage('Link gambar harus diawali http:// atau https://');
+      return false;
+    }
+    return true;
+  }
+
   Future<void> _submit() async {
     if (_isSubmitting) return;
     if (!_validate()) return;
+    if (!_validateImageUrl()) return;
 
     setState(() => _isSubmitting = true);
 
@@ -174,6 +199,7 @@ class _EditPostPageState extends State<EditPostPage> {
         categoryId: _selectedCategoryId!,
         image: _removeExistingImage ? '' : widget.post.image,
         newImage: _newImage,
+        imageUrl: _newImage == null ? _pastedImageUrl : null,
       );
 
       if (!mounted) return;
