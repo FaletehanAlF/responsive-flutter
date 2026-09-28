@@ -401,6 +401,64 @@ class _ImageDropZoneState extends State<ImageDropZone> {
   }
 }
 
+/// Kolom opsional "tempel link gambar" (mis. dari Pinterest).
+/// Link hanya dipakai bila tidak ada file (file selalu menang).
+/// Server yang men-download gambarnya, jadi tidak kena blokir CORS browser.
+class ImageUrlField extends StatelessWidget {
+  final TextEditingController controller;
+  final bool visible;
+  final ValueChanged<bool> onToggle;
+  final VoidCallback onChanged;
+
+  const ImageUrlField({
+    super.key,
+    required this.controller,
+    required this.visible,
+    required this.onToggle,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Align(
+          alignment: Alignment.center,
+          child: TextButton.icon(
+            onPressed: () => onToggle(!visible),
+            icon: const Icon(Icons.link, size: 16),
+            label: Text(
+              visible ? 'Tutup kolom link' : 'atau tempel link gambar',
+            ),
+          ),
+        ),
+        if (visible)
+          TextField(
+            controller: controller,
+            keyboardType: TextInputType.url,
+            onChanged: (_) => onChanged(),
+            decoration: InputDecoration(
+              hintText: 'https://contoh.com/gambar.jpg',
+              prefixIcon: const Icon(Icons.link),
+              suffixIcon: controller.text.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        controller.clear();
+                        onChanged();
+                      },
+                    ),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// Bingkai putus-putus untuk area unggah gambar.
 class _DashedBorderPainter extends CustomPainter {
   final Color color;

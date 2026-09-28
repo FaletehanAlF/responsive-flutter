@@ -458,36 +458,15 @@ class _AddPostPageState extends State<AddPostPage> {
           },
         ),
         const SizedBox(height: 6),
-        Align(
-          alignment: Alignment.center,
-          child: TextButton.icon(
-            onPressed: () => setState(() {
-              _showUrlField = !_showUrlField;
-              if (!_showUrlField) _imageUrlController.clear();
-            }),
-            icon: const Icon(Icons.link, size: 16),
-            label: Text(
-              _showUrlField ? 'Tutup kolom link' : 'atau tempel link gambar',
-            ),
-          ),
+        ImageUrlField(
+          controller: _imageUrlController,
+          visible: _showUrlField,
+          onToggle: (value) => setState(() {
+            _showUrlField = value;
+            if (!value) _imageUrlController.clear();
+          }),
+          onChanged: () => setState(() {}),
         ),
-        if (_showUrlField)
-          TextField(
-            controller: _imageUrlController,
-            keyboardType: TextInputType.url,
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              hintText: 'https://contoh.com/gambar.jpg',
-              prefixIcon: const Icon(Icons.link),
-              suffixIcon: _imageUrlController.text.isEmpty
-                  ? null
-                  : IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () => setState(_imageUrlController.clear),
-                    ),
-              border: const OutlineInputBorder(),
-            ),
-          ),
       ],
     );
   }

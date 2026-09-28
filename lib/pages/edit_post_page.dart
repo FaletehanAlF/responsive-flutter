@@ -355,9 +355,22 @@ class _EditPostPageState extends State<EditPostPage> {
     final newImage = _newImage;
     final currentImageUrl =
         oldImageUrl != null && !_removeExistingImage ? oldImageUrl : null;
+    // Link tempelan menang atas gambar lama, kalah dari file baru.
+    final pastedUrl = _pastedImageUrl;
+    final displayUrl = newImage == null ? (pastedUrl ?? currentImageUrl) : null;
+
+    Widget urlField() => ImageUrlField(
+          controller: _imageUrlController,
+          visible: _showUrlField,
+          onToggle: (value) => setState(() {
+            _showUrlField = value;
+            if (!value) _imageUrlController.clear();
+          }),
+          onChanged: () => setState(() {}),
+        );
 
     // Tanpa gambar sama sekali (tidak ada gambar lama & tidak ada yang baru).
-    if (newImage == null && currentImageUrl == null) {
+    if (newImage == null && displayUrl == null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -368,6 +381,8 @@ class _EditPostPageState extends State<EditPostPage> {
             onDroppedFile: _handleNewFile,
             onDropError: _showMessage,
           ),
+          const SizedBox(height: 6),
+          urlField(),
           if (oldImageUrl != null) ...[
             const SizedBox(height: 10),
             TextButton.icon(
@@ -392,7 +407,7 @@ class _EditPostPageState extends State<EditPostPage> {
       children: [
         ImageDropZone(
           image: newImage,
-          imageUrl: newImage == null ? currentImageUrl : null,
+          imageUrl: displayUrl,
           previewFuture: _previewFuture,
           onPick: _pickImage,
           onDroppedFile: _handleNewFile,
@@ -401,6 +416,8 @@ class _EditPostPageState extends State<EditPostPage> {
           // jadi tidak perlu tombol duplikat di sini.
           onRemove: newImage == null ? null : _cancelNewImage,
         ),
+        const SizedBox(height: 6),
+        urlField(),
         // Toggle hapus gambar lama hanya relevan saat tidak ada gambar baru.
         if (newImage == null && oldImageUrl != null) ...[
           const SizedBox(height: 10),
