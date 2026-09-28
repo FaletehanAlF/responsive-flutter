@@ -208,6 +208,7 @@ class ApiService {
     required String content,
     required int categoryId,
     XFile? image,
+    String? imageUrl,
   }) async {
     final request = http.MultipartRequest('POST', _uri('/posts'))
       ..fields['title'] = title
@@ -225,6 +226,9 @@ class ApiService {
           contentType: _mediaTypeFor(prepared.name),
         ),
       );
+    } else if (imageUrl != null && imageUrl.trim().isNotEmpty) {
+      // File upload menang; link hanya dipakai bila tidak ada file.
+      request.fields['image_url'] = imageUrl.trim();
     }
 
     final response = await http.Response.fromStream(await _client.send(request));
@@ -240,6 +244,7 @@ class ApiService {
     required int categoryId,
     String? image,
     XFile? newImage,
+    String? imageUrl,
   }) async {
     if (newImage != null) {
       final request = http.MultipartRequest('PUT', _uri('/posts/$id'))
@@ -272,6 +277,7 @@ class ApiService {
         'title': title,
         'content': content,
         'image': image,
+        'image_url': imageUrl,
         'category_id': categoryId,
       }),
     );

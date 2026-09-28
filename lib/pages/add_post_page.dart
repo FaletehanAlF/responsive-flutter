@@ -23,11 +23,13 @@ class _AddPostPageState extends State<AddPostPage> {
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
+  final TextEditingController _imageUrlController = TextEditingController();
 
   late final ApiService apiService = widget.apiService ?? ApiService();
 
   XFile? _selectedImage;
   Future<Uint8List>? _previewFuture;
+  bool _showUrlField = false;
 
   List<Category> _categories = const [];
   int? _selectedCategoryId;
@@ -49,6 +51,7 @@ class _AddPostPageState extends State<AddPostPage> {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
+    _imageUrlController.dispose();
     super.dispose();
   }
 
@@ -102,6 +105,8 @@ class _AddPostPageState extends State<AddPostPage> {
       _selectedImage = image;
       // Bytes sudah di tangan, langsung pakai agar preview tampil seketika.
       _previewFuture = Future.value(bytes);
+      // File menang atas link: kosongkan link agar tidak konflik.
+      _imageUrlController.clear();
     });
   }
 
