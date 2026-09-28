@@ -262,7 +262,7 @@ class _EditPostPageState extends State<EditPostPage> {
                       _buildCategoryDropdown(context),
                       const SizedBox(height: 16),
                       _fieldLabel(context, 'Gambar Sampul'),
-                      _buildImageSection(context, colorScheme, oldImageUrl),
+                      _buildImageSection(oldImageUrl),
                       const SizedBox(height: 24),
                       SizedBox(
                         width: double.infinity,
@@ -325,11 +325,7 @@ class _EditPostPageState extends State<EditPostPage> {
     );
   }
 
-  Widget _buildImageSection(
-    BuildContext context,
-    ColorScheme colorScheme,
-    String? oldImageUrl,
-  ) {
+  Widget _buildImageSection(String? oldImageUrl) {
     final newImage = _newImage;
     final currentImageUrl =
         oldImageUrl != null && !_removeExistingImage ? oldImageUrl : null;
@@ -375,34 +371,21 @@ class _EditPostPageState extends State<EditPostPage> {
           onPick: _pickImage,
           onDroppedFile: _handleNewFile,
           onDropError: _showMessage,
+          // Tombol "Hapus" di dalam widget sudah membatalkan gambar baru,
+          // jadi tidak perlu tombol duplikat di sini.
           onRemove: newImage == null ? null : _cancelNewImage,
         ),
-        Row(
-          children: [
-            if (oldImageUrl != null) ...[
-              TextButton.icon(
-                onPressed: _toggleRemoveExistingImage,
-                icon: Icon(
-                  _removeExistingImage
-                      ? Icons.restore
-                      : Icons.delete_outline,
-                  size: 18,
-                ),
-                label: Text(
-                  _removeExistingImage ? 'Batal hapus' : 'Hapus gambar',
-                ),
-              ),
-            ],
-          ],
-        ),
-        if (newImage != null) ...[
-          const SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: _cancelNewImage,
-              icon: const Icon(Icons.close, size: 18),
-              label: const Text('Batalkan gambar baru'),
+        // Toggle hapus gambar lama hanya relevan saat tidak ada gambar baru.
+        if (newImage == null && oldImageUrl != null) ...[
+          const SizedBox(height: 10),
+          TextButton.icon(
+            onPressed: _toggleRemoveExistingImage,
+            icon: Icon(
+              _removeExistingImage ? Icons.restore : Icons.delete_outline,
+              size: 18,
+            ),
+            label: Text(
+              _removeExistingImage ? 'Batal hapus' : 'Hapus gambar',
             ),
           ),
         ],

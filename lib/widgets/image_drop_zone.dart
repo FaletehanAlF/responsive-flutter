@@ -14,14 +14,16 @@ import '../utils/news_theme.dart';
 /// - File tidak valid -> [onDropError] dengan pesan yang jelas.
 /// - Jika beberapa file di-drop sekaligus, hanya satu file gambar
 ///   valid pertama yang dipakai (form hanya butuh satu gambar).
+/// - Folder yang di-drop ditolak dengan pesan yang jelas.
 ///
 /// Logic upload/HTTP tetap di service/page. Validasi ukuran (2 MB)
 /// tetap di page/service agar tidak ada duplikasi aturan.
 ///
-/// Catatan Pinterest: drag langsung dari website seperti Pinterest
-/// hanya berfungsi jika browser/OS memberikan file nyata ke Flutter.
-/// Jika browser hanya memberikan URL (karena CORS), drop akan ditolak
-/// dengan pesan error. Drag file lokal selalu didukung.
+/// Catatan drag dari website (mis. Pinterest): browser tidak memberikan
+/// file nyata ke Flutter (hanya URL, karena CORS), sehingga plugin tidak
+/// mengirim event drop sama sekali. Untuk kasus itu widget menampilkan
+/// petunjuk agar user menyimpan dulu gambarnya ke komputer. Drag file
+/// lokal dari komputer selalu didukung.
 class ImageDropZone extends StatefulWidget {
   /// Gambar baru yang sudah dipilih (via picker maupun drop).
   final XFile? image;
@@ -55,6 +57,13 @@ class ImageDropZone extends StatefulWidget {
     this.onRemove,
   });
 
+  /// Cek apakah nama file berekstensi gambar yang didukung backend.
+  /// Dibuat static agar mudah di-test dan dipakai ulang.
+  static bool isSupportedImageName(String fileName) {
+    final lower = fileName.toLowerCase();
+    return kSupportedImageExtensions.any(lower.endsWith);
+  }
+
   @override
   State<ImageDropZone> createState() => _ImageDropZoneState();
 }
@@ -62,41 +71,50 @@ class ImageDropZone extends StatefulWidget {
 class _ImageDropZoneState extends State<ImageDropZone> {
   bool _dragging = false;
 
-  bool _isSupportedImage(String fileName) {
-    final lower = fileName.toLowerCase();
-    return kSupportedImageExtensions.any(lower.endsWith);
-  }
-
   void _handleDragDone(DropDoneDetails details) {
     setState(() => _dragging = false);
-    if (details.files.isEmpty) {
-      // Terjadi saat drag dari website (mis. Pinterest): browser tidak
-      // memberikan file nyata, hanya URL. Jelaskan ke user.
+    // Semua kegagalan di sini WAJIB memberi pesan ke user (jangan silent).
+    try {
+      if (details.files.isEmpty) {
+        widget.onDropError(
+          'Tidak ada file gambar yang diterima. Seret file gambar dari komputer Anda.',
+        );
+        return;
+      }
+
+      for (final file in details.files) {
+        // Folder dilewati dulu; pesan khusus ada di bawah.
+        if (file is DropItemDirectory) continue;
+        final name = file.name;
+        if (name.isNotEmpty && ImageDropZone.isSupportedImageName(name)) {
+          // Teruskan objek file ASLI (jangan dibuat ulang dari path) agar
+          // isi file (terutama blob URL di web) tidak hilang.
+          widget.onDroppedFile(file);
+          return;
+        }
+        // Fallback: sebagian browser mengisi path tanpa name.
+        if (name.isEmpty && ImageDropZone.isSupportedImageName(file.path)) {
+          final fallbackName = file.path.split(RegExp(r'[\\/]')).last;
+          widget.onDroppedFile(XFile(file.path, name: fallbackName));
+          return;
+        }
+      }
+
+      if (details.files.every((file) => file is DropItemDirectory)) {
+        widget.onDropError(
+          'Yang Anda seret adalah folder. Seret file gambarnya langsung.',
+        );
+        return;
+      }
+
       widget.onDropError(
-        'Tidak ada file gambar yang diterima. Seret file gambar dari komputer Anda.',
+        'Format gambar tidak didukung. Hanya jpg, jpeg, png, webp yang diizinkan',
       );
-      return;
+    } catch (_) {
+      widget.onDropError(
+        'Gagal memproses file yang di-drop. Coba pilih lewat tombol.',
+      );
     }
-
-    for (final file in details.files) {
-      final name = file.name;
-      if (name.isNotEmpty && _isSupportedImage(name)) {
-        // Teruskan objek file ASLI (jangan dibuat ulang dari path) agar
-        // isi file (terutama blob URL di web) tidak hilang.
-        widget.onDroppedFile(file);
-        return;
-      }
-      // Fallback: sebagian browser mengisi path tanpa name.
-      if (name.isEmpty && _isSupportedImage(file.path)) {
-        final fallbackName = file.path.split(RegExp(r'[\\/]')).last;
-        widget.onDroppedFile(XFile(file.path, name: fallbackName));
-        return;
-      }
-    }
-
-    widget.onDropError(
-      'Format gambar tidak didukung. Hanya jpg, jpeg, png, webp yang diizinkan',
-    );
   }
 
   @override
@@ -127,20 +145,14 @@ class _ImageDropZoneState extends State<ImageDropZone> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: _buildNewPreview(image),
-            ),
-          ),
-          const SizedBox(height: 8),
-          _fileNameRow(image.name),
-          const SizedBox(height: 4),
+          _previewCard(_buildNewPreview(image)),
+          const SizedBox(height: 10),
+          _fileNameChip(image.name),
+          const SizedBox(height: 6),
           Text(
             _dragging
                 ? 'Lepaskan gambar di sini untuk mengganti'
-                : 'Seret gambar baru ke sini atau klik Ganti',
+                : 'Seret gambar baru ke sini untuk mengganti',
             style: const TextStyle(
               fontSize: 12,
               color: NewsColors.subtitle,
@@ -148,31 +160,7 @@ class _ImageDropZoneState extends State<ImageDropZone> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: widget.onPick,
-                  icon: const Icon(Icons.refresh, size: 18),
-                  label: const Text('Ganti gambar'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ),
-              if (widget.onRemove != null) ...[
-                const SizedBox(width: 10),
-                TextButton.icon(
-                  onPressed: widget.onRemove,
-                  icon: const Icon(Icons.delete_outline, size: 18),
-                  label: const Text('Hapus'),
-                ),
-              ],
-            ],
-          ),
+          _actionButtons(),
         ],
       );
     }
@@ -182,23 +170,20 @@ class _ImageDropZoneState extends State<ImageDropZone> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const _PreviewError(),
-              ),
+          _previewCard(
+            Image.network(
+              imageUrl,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  const _PreviewError(),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             _dragging
                 ? 'Lepaskan gambar di sini untuk mengganti'
-                : 'Seret gambar baru ke sini atau klik Ganti',
+                : 'Seret gambar baru ke sini untuk mengganti',
             style: const TextStyle(
               fontSize: 12,
               color: NewsColors.subtitle,
@@ -206,17 +191,7 @@ class _ImageDropZoneState extends State<ImageDropZone> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 10),
-          OutlinedButton.icon(
-            onPressed: widget.onPick,
-            icon: const Icon(Icons.image_outlined, size: 20),
-            label: const Text('Ganti gambar'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 13),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-            ),
-          ),
+          _actionButtons(),
         ],
       );
     }
@@ -231,8 +206,9 @@ class _ImageDropZoneState extends State<ImageDropZone> {
         borderRadius: BorderRadius.circular(20),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
                 width: 60,
@@ -254,6 +230,7 @@ class _ImageDropZoneState extends State<ImageDropZone> {
                 _dragging
                     ? 'Lepaskan gambar di sini'
                     : 'Seret & letakkan gambar di sini',
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
@@ -263,6 +240,7 @@ class _ImageDropZoneState extends State<ImageDropZone> {
               const SizedBox(height: 4),
               const Text(
                 'atau klik untuk memilih gambar',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
                   color: NewsColors.subtitle,
@@ -271,8 +249,18 @@ class _ImageDropZoneState extends State<ImageDropZone> {
               const SizedBox(height: 4),
               const Text(
                 'JPG, PNG, atau WEBP • Maks 2 MB',
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12.5,
+                  color: NewsColors.subtitle,
+                ),
+              ),
+              const SizedBox(height: 2),
+              const Text(
+                'Hanya file dari komputer • Drag dari website tidak didukung',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
                   color: NewsColors.subtitle,
                 ),
               ),
@@ -283,23 +271,101 @@ class _ImageDropZoneState extends State<ImageDropZone> {
     );
   }
 
-  Widget _fileNameRow(String name) {
-    return Row(
-      children: [
-        const Icon(Icons.image_outlined, size: 16, color: NewsColors.subtitle),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 12.5,
-              color: NewsColors.subtitle,
+  /// Bingkai preview yang rapi: rounded + border tipis + rasio konsisten.
+  Widget _previewCard(Widget child) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF0F0F2)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(19),
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: child,
+        ),
+      ),
+    );
+  }
+
+  /// Nama file dalam satu baris rapi (ellipsis bila kepanjangan).
+  Widget _fileNameChip(String name) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: NewsColors.searchBg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.image_outlined,
+            size: 16,
+            color: NewsColors.subtitle,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              name.isEmpty ? 'gambar' : name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: NewsColors.subtitle,
+              ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Tombol aksi yang aman di semua lebar layar: layar sempit (<380)
+  /// tombol disusun vertikal full-width agar tidak overflow.
+  Widget _actionButtons() {
+    final replaceButton = OutlinedButton.icon(
+      onPressed: widget.onPick,
+      icon: const Icon(Icons.refresh, size: 18),
+      label: const Text('Ganti gambar'),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 13),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
         ),
-      ],
+      ),
+    );
+    final removeButton = widget.onRemove == null
+        ? null
+        : TextButton.icon(
+            onPressed: widget.onRemove,
+            icon: const Icon(Icons.delete_outline, size: 18),
+            label: const Text('Hapus'),
+          );
+
+    if (removeButton == null) {
+      return SizedBox(width: double.infinity, child: replaceButton);
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 380) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              replaceButton,
+              const SizedBox(height: 4),
+              Center(child: removeButton),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(child: replaceButton),
+            const SizedBox(width: 10),
+            removeButton,
+          ],
+        );
+      },
     );
   }
 
@@ -382,7 +448,6 @@ class _PreviewError extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      height: 180,
       color: colorScheme.surfaceContainerHighest,
       child: const Center(
         child: Icon(Icons.image_not_supported, size: 40),
