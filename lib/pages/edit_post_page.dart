@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/category.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../widgets/image_drop_zone.dart';
 import '../widgets/news_widgets.dart';
 
 class EditPostPage extends StatefulWidget {
@@ -86,25 +86,40 @@ class _EditPostPageState extends State<EditPostPage> {
     }
   }
 
+  Future<void> _handleNewFile(XFile image) async {
+    // Baca bytes dulu (bukan image.length()) karena file hasil drag & drop
+    // di web berupa blob URL yang tidak bisa di-stat panjangnya.
+    late final Uint8List bytes;
+    try {
+      bytes = await image.readAsBytes();
+    } catch (_) {
+      if (!mounted) return;
+      _showMessage('Gagal membaca file gambar. Coba pilih lewat tombol.');
+      return;
+    }
+    if (!mounted) return;
+
+    if (bytes.lengthInBytes > kMaxImageSizeInBytes) {
+      _showMessage(
+        'Ukuran gambar ${(bytes.lengthInBytes / (1024 * 1024)).toStringAsFixed(1)} MB '
+        'melebihi batas 2 MB',
+      );
+      return;
+    }
+
+    setState(() {
+      _newImage = image;
+      // Bytes sudah di tangan, langsung pakai agar preview tampil seketika.
+      _previewFuture = Future.value(bytes);
+      _removeExistingImage = false;
+    });
+  }
+
   Future<void> _pickImage() async {
     try {
       final image = await _picker.pickImage(source: ImageSource.gallery);
       if (image == null || !mounted) return;
-
-      final size = await image.length();
-      if (size > kMaxImageSizeInBytes) {
-        _showMessage(
-          'Ukuran gambar ${(size / (1024 * 1024)).toStringAsFixed(1)} MB '
-          'melebihi batas 2 MB',
-        );
-        return;
-      }
-
-      setState(() {
-        _newImage = image;
-        _previewFuture = image.readAsBytes();
-        _removeExistingImage = false;
-      });
+      await _handleNewFile(image);
     } on PlatformException catch (e) {
       if (!mounted) return;
       _showMessage('Gagal memilih gambar: ${e.message}');
@@ -319,70 +334,52 @@ class _EditPostPageState extends State<EditPostPage> {
     final currentImageUrl =
         oldImageUrl != null && !_removeExistingImage ? oldImageUrl : null;
 
+    // Tanpa gambar sama sekali (tidak ada gambar lama & tidak ada yang baru).
+    if (newImage == null && currentImageUrl == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ImageDropZone(
+            image: null,
+            previewFuture: _previewFuture,
+            onPick: _pickImage,
+            onDroppedFile: _handleNewFile,
+            onDropError: _showMessage,
+          ),
+          if (oldImageUrl != null) ...[
+            const SizedBox(height: 10),
+            TextButton.icon(
+              onPressed: _toggleRemoveExistingImage,
+              icon: Icon(
+                _removeExistingImage
+                    ? Icons.restore
+                    : Icons.delete_outline,
+                size: 18,
+              ),
+              label: Text(
+                _removeExistingImage ? 'Batal hapus' : 'Hapus gambar',
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (newImage != null)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: _buildNewImagePreview(context, newImage),
-          )
-        else if (currentImageUrl != null)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Image.network(
-              currentImageUrl,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                height: 180,
-                color: colorScheme.surfaceContainerHighest,
-                child: const Center(
-                  child: Icon(Icons.image_not_supported, size: 40),
-                ),
-              ),
-            ),
-          )
-        else
-          Container(
-            height: 120,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerLow,
-              border: Border.all(color: colorScheme.outlineVariant),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.image_not_supported,
-                    size: 32,
-                    color: colorScheme.outline,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tanpa gambar sampul',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: colorScheme.outline,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        const SizedBox(height: 10),
+        ImageDropZone(
+          image: newImage,
+          imageUrl: newImage == null ? currentImageUrl : null,
+          previewFuture: _previewFuture,
+          onPick: _pickImage,
+          onDroppedFile: _handleNewFile,
+          onDropError: _showMessage,
+          onRemove: newImage == null ? null : _cancelNewImage,
+        ),
         Row(
           children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _pickImage,
-                icon: const Icon(Icons.image_outlined, size: 20),
-                label: Text(newImage == null ? 'Ganti gambar' : 'Ganti lagi'),
-              ),
-            ),
             if (oldImageUrl != null) ...[
-              const SizedBox(width: 8),
               TextButton.icon(
                 onPressed: _toggleRemoveExistingImage,
                 icon: Icon(
@@ -413,37 +410,6 @@ class _EditPostPageState extends State<EditPostPage> {
     );
   }
 
-  Widget _buildNewImagePreview(BuildContext context, XFile image) {
-    if (kIsWeb) {
-      return Image.network(
-        image.path,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => const _PreviewError(),
-      );
-    }
-
-    return FutureBuilder<Uint8List>(
-      future: _previewFuture ?? image.readAsBytes(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
-            padding: EdgeInsets.all(24),
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (snapshot.hasError || !snapshot.hasData) {
-          return const _PreviewError();
-        }
-        return Image.memory(
-          snapshot.data!,
-          width: double.infinity,
-          fit: BoxFit.cover,
-        );
-      },
-    );
-  }
-
   Widget _fieldLabel(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -454,19 +420,6 @@ class _EditPostPageState extends State<EditPostPage> {
             .labelLarge
             ?.copyWith(fontWeight: FontWeight.w600),
       ),
-    );
-  }
-}
-
-class _PreviewError extends StatelessWidget {
-  const _PreviewError();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 180,
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: const Center(child: Icon(Icons.image_not_supported, size: 40)),
     );
   }
 }

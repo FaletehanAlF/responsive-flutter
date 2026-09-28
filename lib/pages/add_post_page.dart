@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show Uint8List, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/category.dart';
 import '../services/api_service.dart';
 import '../utils/news_theme.dart';
+import '../widgets/image_drop_zone.dart';
 import '../widgets/news_widgets.dart';
 import 'profile_page.dart';
 
@@ -77,24 +77,39 @@ class _AddPostPageState extends State<AddPostPage> {
     }
   }
 
+  Future<void> _handleNewFile(XFile image) async {
+    // Baca bytes dulu (bukan image.length()) karena file hasil drag & drop
+    // di web berupa blob URL yang tidak bisa di-stat panjangnya.
+    late final Uint8List bytes;
+    try {
+      bytes = await image.readAsBytes();
+    } catch (_) {
+      if (!mounted) return;
+      _showMessage('Gagal membaca file gambar. Coba pilih lewat tombol.');
+      return;
+    }
+    if (!mounted) return;
+
+    if (bytes.lengthInBytes > kMaxImageSizeInBytes) {
+      _showMessage(
+        'Ukuran gambar ${(bytes.lengthInBytes / (1024 * 1024)).toStringAsFixed(1)} MB '
+        'melebihi batas 2 MB',
+      );
+      return;
+    }
+
+    setState(() {
+      _selectedImage = image;
+      // Bytes sudah di tangan, langsung pakai agar preview tampil seketika.
+      _previewFuture = Future.value(bytes);
+    });
+  }
+
   Future<void> _pickImage() async {
     try {
       final image = await _picker.pickImage(source: ImageSource.gallery);
       if (image == null || !mounted) return;
-
-      final size = await image.length();
-      if (size > kMaxImageSizeInBytes) {
-        _showMessage(
-          'Ukuran gambar ${(size / (1024 * 1024)).toStringAsFixed(1)} MB '
-          'melebihi batas 2 MB',
-        );
-        return;
-      }
-
-      setState(() {
-        _selectedImage = image;
-        _previewFuture = image.readAsBytes();
-      });
+      await _handleNewFile(image);
     } on PlatformException catch (e) {
       if (!mounted) return;
       _showMessage('Gagal memilih gambar: ${e.message}');
@@ -396,116 +411,17 @@ class _AddPostPageState extends State<AddPostPage> {
   }
 
   Widget _buildImagePicker(BuildContext context) {
-    final image = _selectedImage;
-    if (image == null) {
-      return CustomPaint(
-        painter: _DashedBorderPainter(
-          color: const Color(0xFFC9CDD3),
-          radius: 20,
-        ),
-        child: InkWell(
-          onTap: _pickImage,
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 16),
-            child: const Column(
-              children: [
-                _DropIcon(),
-                SizedBox(height: 12),
-                Text(
-                  'Pilih gambar sampul',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: NewsColors.ink,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'JPG, PNG, atau WEBP • Maks 2 MB',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: NewsColors.subtitle,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
-            child: _buildPreview(context, image),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _pickImage,
-                icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Ganti gambar'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _selectedImage = null;
-                  _previewFuture = null;
-                });
-              },
-              icon: const Icon(Icons.delete_outline, size: 18),
-              label: const Text('Hapus'),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPreview(BuildContext context, XFile image) {
-    if (kIsWeb) {
-      return Image.network(
-        image.path,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => const _PreviewError(),
-      );
-    }
-
-    return FutureBuilder<Uint8List>(
-      future: _previewFuture ?? image.readAsBytes(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
-            padding: EdgeInsets.all(24),
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (snapshot.hasError || !snapshot.hasData) {
-          return const _PreviewError();
-        }
-        return Image.memory(
-          snapshot.data!,
-          width: double.infinity,
-          fit: BoxFit.cover,
-        );
+    return ImageDropZone(
+      image: _selectedImage,
+      previewFuture: _previewFuture,
+      onPick: _pickImage,
+      onDroppedFile: _handleNewFile,
+      onDropError: _showMessage,
+      onRemove: () {
+        setState(() {
+          _selectedImage = null;
+          _previewFuture = null;
+        });
       },
     );
   }
@@ -672,83 +588,6 @@ class _SectionHeader extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _DropIcon extends StatelessWidget {
-  const _DropIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        color: NewsColors.primary.withValues(alpha: 0.1),
-        shape: BoxShape.circle,
-      ),
-      child: const Icon(
-        Icons.cloud_upload_outlined,
-        size: 30,
-        color: NewsColors.primary,
-      ),
-    );
-  }
-}
-
-/// Bingkai putus-putus untuk area unggah gambar.
-class _DashedBorderPainter extends CustomPainter {
-  final Color color;
-  final double radius;
-
-  const _DashedBorderPainter({required this.color, this.radius = 20});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const dashWidth = 8.0;
-    const dashGap = 6.0;
-    const strokeWidth = 1.5;
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke;
-    final rect = RRect.fromLTRBR(
-      strokeWidth / 2,
-      strokeWidth / 2,
-      size.width - strokeWidth / 2,
-      size.height - strokeWidth / 2,
-      Radius.circular(radius),
-    );
-    final path = Path()..addRRect(rect);
-    final dashPath = Path();
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        final end = (distance + dashWidth).clamp(0.0, metric.length);
-        dashPath.addPath(metric.extractPath(distance, end), Offset.zero);
-        distance += dashWidth + dashGap;
-      }
-    }
-    canvas.drawPath(dashPath, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _PreviewError extends StatelessWidget {
-  const _PreviewError();
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      height: 180,
-      color: colorScheme.surfaceContainerHighest,
-      child: const Center(
-        child: Icon(Icons.image_not_supported, size: 40),
-      ),
     );
   }
 }

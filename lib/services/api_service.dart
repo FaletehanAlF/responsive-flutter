@@ -116,13 +116,29 @@ class ApiService {
       );
     }
 
-    final size = await image.length();
+    final size = await _fileSizeInBytes(image);
     if (size > kMaxImageSizeInBytes) {
       final sizeInMb = (size / (1024 * 1024)).toStringAsFixed(1);
       throw ApiException('Ukuran gambar $sizeInMb MB melebihi batas 2 MB');
     }
 
     return image;
+  }
+
+  /// Ukuran file dalam byte. File hasil drag & drop di web berupa blob URL
+  /// yang tidak bisa di-stat, jadi fallback ke panjang bytes yang dibaca.
+  Future<int> _fileSizeInBytes(XFile image) async {
+    try {
+      return await image.length();
+    } catch (_) {
+      try {
+        return (await image.readAsBytes()).length;
+      } catch (_) {
+        throw ApiException(
+          'Gagal membaca file gambar. Coba pilih ulang gambarnya.',
+        );
+      }
+    }
   }
 
   Future<List<Category>> getCategories() async {

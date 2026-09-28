@@ -1,3 +1,4 @@
+import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 
 import '../utils/news_theme.dart';
@@ -18,6 +19,14 @@ class _MainShellState extends State<MainShell> {
   int _index = 0;
   int _dataVersion = 0;
   int? _detailPostId;
+
+  /// Menu bottom bar: ikon Material + label, sama seperti sebelumnya.
+  static const List<({IconData icon, String label})> _tabs = [
+    (icon: Icons.home, label: 'Beranda'),
+    (icon: Icons.article, label: 'Artikel'),
+    (icon: Icons.add, label: 'Tambah'),
+    (icon: Icons.settings, label: 'Pengaturan'),
+  ];
 
   void _notifyDataChanged() {
     setState(() => _dataVersion++);
@@ -132,46 +141,47 @@ class _MainShellState extends State<MainShell> {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(28),
-            child: NavigationBar(
+            child: AnimatedBottomNavigationBar.builder(
+              itemCount: _tabs.length,
+              tabBuilder: (index, isActive) {
+                final tab = _tabs[index];
+                final color = isActive
+                    ? NewsColors.primary
+                    : const Color(0xFF9AA0A6);
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(tab.icon, size: 22, color: color),
+                    const SizedBox(height: 2),
+                    Text(
+                      tab.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: isActive
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                );
+              },
+              activeIndex: _index,
+              onTap: _select,
+              // Tanpa FloatingActionButton: tidak ada notch.
+              gapLocation: GapLocation.none,
               backgroundColor: Colors.white,
-              indicatorColor: NewsColors.primary,
+              splashColor: NewsColors.primary.withValues(alpha: 0.12),
+              splashRadius: 24,
               height: 68,
-              labelBehavior:
-                  NavigationDestinationLabelBehavior.alwaysShow,
-              selectedIndex: _index,
-              onDestinationSelected: _select,
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.home_outlined, color: Color(0xFF9AA0A6)),
-                  selectedIcon: Icon(Icons.home, color: Colors.white),
-                  label: 'Beranda',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.article_outlined, color: Color(0xFF9AA0A6)),
-                  selectedIcon:
-                      Icon(Icons.article, color: Colors.white),
-                  label: 'Artikel',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.add, color: Color(0xFF9AA0A6)),
-                  // Ikon + tetap sama saat diklik, hanya warna menyesuaikan.
-                  selectedIcon: Icon(Icons.add, color: Colors.white),
-                  label: 'Tambah',
-                ),
-                NavigationDestination(
-                  icon: Icon(
-                    Icons.settings,
-                    color: Color(0xFF9AA0A6),
-                  ),
-                  // Gir terisi penuh, beda dari ikon profil & tetap sama
-                  // saat diklik (hanya warna menyesuaikan pil indikator).
-                  selectedIcon: Icon(
-                    Icons.settings,
-                    color: Colors.white,
-                  ),
-                  label: 'Pengaturan',
-                ),
-              ],
+              elevation: 0,
+              leftCornerRadius: 28,
+              rightCornerRadius: 28,
+              // Animasi splash halus (~300ms), tidak berlebihan.
+              splashSpeedInMilliseconds: 300,
             ),
           ),
         ),
