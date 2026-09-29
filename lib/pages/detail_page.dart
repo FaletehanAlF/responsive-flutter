@@ -420,57 +420,24 @@ class _DetailPageState extends State<DetailPage> {
     const heroHeight = 400.0;
     const overlap = 28.0;
 
-    final imageUrl = post.imageUrl;
     final meta = relativeTime(post.createdAt);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F6F7),
       body: Stack(
         children: [
-          // ── Hero image full-bleed ──
+          // ── Hero image full-bleed (anti-gagal: selalu ada placeholder rapi) ──
           SizedBox(
             height: heroHeight,
             width: double.infinity,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                if (imageUrl != null)
-                  Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return Container(
-                        color: const Color(0xFFE4E6EB),
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            color: NewsColors.primary,
-                          ),
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, e, s) => Container(
-                      color: const Color(0xFF3A3A3C),
-                      child: const Center(
-                        child: Icon(
-                          Icons.image_not_supported,
-                          size: 56,
-                          color: Colors.white54,
-                        ),
-                      ),
-                    ),
-                  )
-                else
-                  Container(
-                    color: const Color(0xFF3A3A3C),
-                    child: const Center(
-                      child: Icon(
-                        Icons.image_outlined,
-                        size: 56,
-                        color: Colors.white54,
-                      ),
-                    ),
-                  ),
+                NewsImage(
+                  imageUrl: post.imageUrl,
+                  categoryName: post.categoryName,
+                  iconSize: 56,
+                ),
                 const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -707,7 +674,6 @@ class _DetailPageState extends State<DetailPage> {
     Post post, {
     required bool isDesktop,
   }) {
-    final imageUrl = post.imageUrl;
     final date = formatPostDate(post.createdAt);
     final meta = relativeTime(post.createdAt);
     final readTime = _readTime(post.content);
@@ -758,7 +724,6 @@ class _DetailPageState extends State<DetailPage> {
                         flex: 5,
                         child: _WebArticleBody(
                           post: post,
-                          imageUrl: imageUrl,
                           date: date,
                           meta: meta,
                           readTime: readTime,
@@ -791,7 +756,6 @@ class _DetailPageState extends State<DetailPage> {
                 else
                   _WebArticleBody(
                     post: post,
-                    imageUrl: imageUrl,
                     date: date,
                     meta: meta,
                     readTime: readTime,
@@ -831,7 +795,6 @@ class _DetailPageState extends State<DetailPage> {
 /// Kolom utama artikel untuk tablet/web.
 class _WebArticleBody extends StatelessWidget {
   final Post post;
-  final String? imageUrl;
   final String date;
   final String meta;
   final String readTime;
@@ -840,7 +803,6 @@ class _WebArticleBody extends StatelessWidget {
 
   const _WebArticleBody({
     required this.post,
-    required this.imageUrl,
     required this.date,
     required this.meta,
     required this.readTime,
@@ -850,7 +812,6 @@ class _WebArticleBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final url = imageUrl;
     final paragraphs = post.content
         .split(RegExp(r'\n\s*\n|\n'))
         .map((e) => e.trim())
@@ -955,39 +916,17 @@ class _WebArticleBody extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 20),
-        if (url != null)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image.network(
-                url,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return Container(
-                    color: const Color(0xFFF1F2F4),
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        color: NewsColors.primary,
-                      ),
-                    ),
-                  );
-                },
-                errorBuilder: (context, e, s) => Container(
-                  color: const Color(0xFFE4E6EB),
-                  child: const Center(
-                    child: Icon(
-                      Icons.image_not_supported,
-                      size: 48,
-                      color: NewsColors.muted,
-                    ),
-                  ),
-                ),
-              ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: NewsImage(
+              imageUrl: post.imageUrl,
+              categoryName: post.categoryName,
+              iconSize: 48,
             ),
           ),
+        ),
         const SizedBox(height: 22),
         ...((paragraphs.isEmpty ? [post.content] : paragraphs).map(
           (p) => Padding(

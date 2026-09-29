@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../models/category.dart';
 import '../models/post.dart';
 import '../services/api_service.dart';
+import '../utils/news_theme.dart';
 import '../widgets/image_drop_zone.dart';
 import '../widgets/news_widgets.dart';
 
@@ -24,7 +25,6 @@ class _EditPostPageState extends State<EditPostPage> {
 
   late final TextEditingController _titleController;
   late final TextEditingController _contentController;
-  late final TextEditingController _imageUrlController;
 
   List<Category> _categories = const [];
   int? _selectedCategoryId;
@@ -32,7 +32,6 @@ class _EditPostPageState extends State<EditPostPage> {
   XFile? _newImage;
   Future<Uint8List>? _previewFuture;
   bool _removeExistingImage = false;
-  bool _showUrlField = false;
 
   String? _titleError;
   String? _contentError;
@@ -46,7 +45,6 @@ class _EditPostPageState extends State<EditPostPage> {
     super.initState();
     _titleController = TextEditingController(text: widget.post.title);
     _contentController = TextEditingController(text: widget.post.content);
-    _imageUrlController = TextEditingController();
     _loadCategories();
   }
 
@@ -54,7 +52,6 @@ class _EditPostPageState extends State<EditPostPage> {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
-    _imageUrlController.dispose();
     super.dispose();
   }
 
@@ -116,8 +113,6 @@ class _EditPostPageState extends State<EditPostPage> {
       // Bytes sudah di tangan, langsung pakai agar preview tampil seketika.
       _previewFuture = Future.value(bytes);
       _removeExistingImage = false;
-      // File menang atas link: kosongkan link agar tidak konflik.
-      _imageUrlController.clear();
     });
   }
 
@@ -166,28 +161,9 @@ class _EditPostPageState extends State<EditPostPage> {
     return _titleError == null && _contentError == null && _categoryError == null;
   }
 
-  /// Link gambar yang ditempel user. Hanya dipakai bila tidak ada file baru.
-  String? get _pastedImageUrl {
-    final url = _imageUrlController.text.trim();
-    return url.isEmpty ? null : url;
-  }
-
-  bool _validateImageUrl() {
-    final url = _pastedImageUrl;
-    if (_newImage == null &&
-        url != null &&
-        !url.startsWith('http://') &&
-        !url.startsWith('https://')) {
-      _showMessage('Link gambar harus diawali http:// atau https://');
-      return false;
-    }
-    return true;
-  }
-
   Future<void> _submit() async {
     if (_isSubmitting) return;
     if (!_validate()) return;
-    if (!_validateImageUrl()) return;
 
     setState(() => _isSubmitting = true);
 
@@ -199,7 +175,6 @@ class _EditPostPageState extends State<EditPostPage> {
         categoryId: _selectedCategoryId!,
         image: _removeExistingImage ? '' : widget.post.image,
         newImage: _newImage,
-        imageUrl: _newImage == null ? _pastedImageUrl : null,
       );
 
       if (!mounted) return;
@@ -220,10 +195,10 @@ class _EditPostPageState extends State<EditPostPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final oldImageUrl = widget.post.imageUrl;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF6F6F7),
       appBar: const NewsAppBar(
         title: 'Edit Artikel',
         showBack: true,
@@ -231,85 +206,148 @@ class _EditPostPageState extends State<EditPostPage> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final bool isDesktop = constraints.maxWidth >= 600;
-          final double cap = isDesktop ? 760 : double.infinity;
+          final double cap = isDesktop ? 720 : double.infinity;
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(vertical: 20),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             child: Center(
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: cap),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Perbarui informasi artikel.',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(color: colorScheme.outline),
-                      ),
-                      const SizedBox(height: 20),
-                      _fieldLabel(context, 'Judul Artikel'),
-                      TextField(
-                        controller: _titleController,
-                        textInputAction: TextInputAction.next,
-                        onChanged: (_) {
-                          if (_titleError != null) {
-                            setState(() => _titleError = null);
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Masukkan judul artikel',
-                          errorText: _titleError,
-                          border: const OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _fieldLabel(context, 'Isi Artikel'),
-                      TextField(
-                        controller: _contentController,
-                        maxLines: 12,
-                        minLines: 5,
-                        onChanged: (_) {
-                          if (_contentError != null) {
-                            setState(() => _contentError = null);
-                          }
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Tulis isi artikel di sini…',
-                          errorText: _contentError,
-                          border: const OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _fieldLabel(context, 'Kategori'),
-                      _buildCategoryDropdown(context),
-                      const SizedBox(height: 16),
-                      _fieldLabel(context, 'Gambar Sampul'),
-                      _buildImageSection(oldImageUrl),
-                      const SizedBox(height: 24),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: FilledButton(
-                          onPressed: _isSubmitting ? null : _submit,
-                          child: _isSubmitting
-                              ? const SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _FormCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _SectionHeader(
+                            number: '1',
+                            title: 'Gambar Sampul',
+                            trailing: 'Opsional',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildImageSection(oldImageUrl),
+                          if (_newImage == null &&
+                              (oldImageUrl == null ||
+                                  _removeExistingImage)) ...[
+                            const SizedBox(height: 10),
+                            const Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  size: 15,
+                                  color: NewsColors.subtitle,
+                                ),
+                                SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'Pilih gambar dari galeri / file perangkat bila ingin menambah sampul.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: NewsColors.subtitle,
+                                      height: 1.4,
+                                    ),
                                   ),
-                                )
-                              : const Text('Simpan Perubahan'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _FormCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _SectionHeader(
+                            number: '2',
+                            title: 'Judul & Isi',
+                          ),
+                          const SizedBox(height: 12),
+                          _fieldLabel(context, 'Judul Artikel'),
+                          TextField(
+                            controller: _titleController,
+                            textInputAction: TextInputAction.next,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: NewsColors.ink,
+                            ),
+                            onChanged: (_) {
+                              if (_titleError != null) {
+                                setState(() => _titleError = null);
+                              }
+                            },
+                            decoration: _inputDecoration(
+                              hint: 'Masukkan judul artikel',
+                              errorText: _titleError,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          _fieldLabel(context, 'Isi Artikel'),
+                          TextField(
+                            controller: _contentController,
+                            maxLines: 10,
+                            minLines: 5,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              height: 1.6,
+                              color: NewsColors.ink,
+                            ),
+                            onChanged: (_) {
+                              if (_contentError != null) {
+                                setState(() => _contentError = null);
+                              }
+                            },
+                            decoration: _inputDecoration(
+                              hint: 'Tulis isi artikel di sini…',
+                              errorText: _contentError,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _FormCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _SectionHeader(
+                            number: '3',
+                            title: 'Kategori',
+                          ),
+                          const SizedBox(height: 12),
+                          _buildCategoryDropdown(context),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: _isSubmitting ? null : _submit,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: NewsColors.primary,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 54),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Simpan Perubahan'),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -319,14 +357,53 @@ class _EditPostPageState extends State<EditPostPage> {
     );
   }
 
+  InputDecoration _inputDecoration({required String hint, String? errorText}) {
+    const radius = BorderRadius.all(Radius.circular(16));
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(
+        fontSize: 14.5,
+        color: NewsColors.muted,
+      ),
+      errorText: errorText,
+      filled: true,
+      fillColor: NewsColors.searchBg,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
+      ),
+      border: const OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: const OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide(color: NewsColors.primary, width: 1.5),
+      ),
+      errorBorder: const OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: const OutlineInputBorder(
+        borderRadius: radius,
+        borderSide: BorderSide(color: Colors.red, width: 1.5),
+      ),
+    );
+  }
+
   Widget _buildCategoryDropdown(BuildContext context) {
     return DropdownButtonFormField<int>(
       initialValue: _selectedCategoryId,
-      decoration: InputDecoration(
-        hintText: _isLoadingCategories ? 'Memuat kategori…' : 'Pilih kategori',
+      dropdownColor: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      style: const TextStyle(fontSize: 15, color: NewsColors.ink),
+      decoration: _inputDecoration(
+        hint: _isLoadingCategories ? 'Memuat kategori…' : 'Pilih kategori',
         errorText: _categoryError,
-        errorMaxLines: 2,
-        border: const OutlineInputBorder(),
       ),
       items: _categories
           .map(
@@ -355,22 +432,9 @@ class _EditPostPageState extends State<EditPostPage> {
     final newImage = _newImage;
     final currentImageUrl =
         oldImageUrl != null && !_removeExistingImage ? oldImageUrl : null;
-    // Link tempelan menang atas gambar lama, kalah dari file baru.
-    final pastedUrl = _pastedImageUrl;
-    final displayUrl = newImage == null ? (pastedUrl ?? currentImageUrl) : null;
-
-    Widget urlField() => ImageUrlField(
-          controller: _imageUrlController,
-          visible: _showUrlField,
-          onToggle: (value) => setState(() {
-            _showUrlField = value;
-            if (!value) _imageUrlController.clear();
-          }),
-          onChanged: () => setState(() {}),
-        );
 
     // Tanpa gambar sama sekali (tidak ada gambar lama & tidak ada yang baru).
-    if (newImage == null && displayUrl == null) {
+    if (newImage == null && currentImageUrl == null) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -381,8 +445,6 @@ class _EditPostPageState extends State<EditPostPage> {
             onDroppedFile: _handleNewFile,
             onDropError: _showMessage,
           ),
-          const SizedBox(height: 6),
-          urlField(),
           if (oldImageUrl != null) ...[
             const SizedBox(height: 10),
             TextButton.icon(
@@ -407,17 +469,13 @@ class _EditPostPageState extends State<EditPostPage> {
       children: [
         ImageDropZone(
           image: newImage,
-          imageUrl: displayUrl,
+          imageUrl: newImage == null ? currentImageUrl : null,
           previewFuture: _previewFuture,
           onPick: _pickImage,
           onDroppedFile: _handleNewFile,
           onDropError: _showMessage,
-          // Tombol "Hapus" di dalam widget sudah membatalkan gambar baru,
-          // jadi tidak perlu tombol duplikat di sini.
           onRemove: newImage == null ? null : _cancelNewImage,
         ),
-        const SizedBox(height: 6),
-        urlField(),
         // Toggle hapus gambar lama hanya relevan saat tidak ada gambar baru.
         if (newImage == null && oldImageUrl != null) ...[
           const SizedBox(height: 10),
@@ -441,11 +499,105 @@ class _EditPostPageState extends State<EditPostPage> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: Theme.of(context)
-            .textTheme
-            .labelLarge
-            ?.copyWith(fontWeight: FontWeight.w600),
+        style: const TextStyle(
+          fontSize: 13.5,
+          fontWeight: FontWeight.w700,
+          color: NewsColors.ink,
+        ),
       ),
+    );
+  }
+}
+
+/// Kartu putih pembungkus tiap seksi form (konsisten dengan Add page).
+class _FormCard extends StatelessWidget {
+  final Widget child;
+
+  const _FormCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF0F0F2)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Judul seksi bernomor.
+class _SectionHeader extends StatelessWidget {
+  final String number;
+  final String title;
+  final String? trailing;
+
+  const _SectionHeader({
+    required this.number,
+    required this.title,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 26,
+          height: 26,
+          decoration: BoxDecoration(
+            color: NewsColors.primary.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            number,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: NewsColors.primary,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 15.5,
+              fontWeight: FontWeight.w800,
+              color: NewsColors.ink,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
+        if (trailing != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: NewsColors.searchBg,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              trailing!,
+              style: const TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: NewsColors.subtitle,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

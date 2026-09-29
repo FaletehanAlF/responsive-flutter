@@ -6,12 +6,6 @@ import '../utils/news_theme.dart';
 
 /// App bar tunggal yang dipakai SEMUA halaman (mobile & web) agar tampilannya
 /// konsisten: bar putih 64px, tombol lingkaran abu, judul tebal di tengah.
-/// Pengecualian: halaman Articles (Discover) tidak memakai app bar.
-///
-/// - [title] null → tanpa judul (gaya home sesuai referensi).
-/// - [showBack] true → lingkaran back; false → lingkaran profil.
-/// - Ikon bell hanya hiasan (tidak bisa diklik / tidak pindah halaman).
-/// - [trailingActions] → tombol lingkaran tambahan (mis. bookmark/more).
 class NewsAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? title;
   final bool showBack;
@@ -34,63 +28,68 @@ class NewsAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final extra = trailingActions ?? const <Widget>[];
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      alignment: Alignment.center,
-      child: SizedBox(
-        height: 64,
-        child: Row(
-          children: [
-            if (showBack)
-              CircleIconButton(
-                icon: Icons.arrow_back,
-                onTap: onBack ??
-                    () {
-                      if (Navigator.of(context).canPop()) {
-                        Navigator.of(context).pop();
-                      }
-                    },
-              )
-            else
-              CircleIconButton(
-                icon: Icons.person,
-                onTap: onProfile,
-              ),
-            Expanded(
-              child: title == null
-                  ? const SizedBox.shrink()
-                  : Text(
-                      title!,
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: NewsColors.ink,
-                        letterSpacing: -0.2,
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        alignment: Alignment.center,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            children: [
+              if (showBack)
+                CircleIconButton(
+                  icon: Icons.arrow_back,
+                  onTap: onBack ??
+                      () {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                )
+              else
+                CircleIconButton(
+                  icon: Icons.person,
+                  onTap: onProfile,
+                ),
+              Expanded(
+                child: title == null
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text(
+                          title!,
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: NewsColors.ink,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
                       ),
-                    ),
-            ),
-            for (var i = 0; i < extra.length; i++) ...[
-              if (i > 0) const SizedBox(width: 10),
-              extra[i],
+              ),
+              for (var i = 0; i < extra.length; i++) ...[
+                if (i > 0) const SizedBox(width: 8),
+                extra[i],
+              ],
+              if (extra.isNotEmpty) const SizedBox(width: 8),
+              const CircleIconButton(
+                icon: Icons.notifications_outlined,
+                showDot: true,
+              ),
             ],
-            if (extra.isNotEmpty) const SizedBox(width: 10),
-            // Bell hanya tampilan (display only) — tidak pindah halaman.
-            const CircleIconButton(
-              icon: Icons.notifications_outlined,
-              showDot: true,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Tombol lingkaran abu seperti di referensi (hamburger / search / bell).
+/// Tombol lingkaran abu yang rapi dan mudah disentuh (44px).
 class CircleIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
@@ -164,25 +163,39 @@ class SectionHeader extends StatelessWidget {
         Expanded(
           child: Text(
             title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 19,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               color: NewsColors.ink,
               letterSpacing: -0.3,
             ),
           ),
         ),
-        // View all hanya tampil bila ada aksinya (mis. disembunyikan
-        // pada Breaking News, tetap tampil pada Recommendation).
         if (onViewAll != null)
           GestureDetector(
             onTap: onViewAll,
-            child: Text(
-              viewAllLabel,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: NewsColors.primary,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 12, top: 2, bottom: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    viewAllLabel,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: NewsColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 16,
+                    color: NewsColors.primary,
+                  ),
+                ],
               ),
             ),
           ),
@@ -191,7 +204,7 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
-/// Badge kategori biru mengambang di atas gambar (Sports).
+/// Badge kategori biru mengambang di atas gambar.
 class FloatingCategoryBadge extends StatelessWidget {
   final String label;
 
@@ -204,13 +217,157 @@ class FloatingCategoryBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: NewsColors.badgeBlue,
         borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: Text(
         label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: const TextStyle(
           color: Colors.white,
           fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────── Gambar anti-gagal (inti perbaikan) ───────────────────
+
+/// Gambar artikel yang TIDAK PERNAH terlihat rusak:
+/// - URL null/kosong -> langsung placeholder gradasi yang rapi.
+/// - Loading -> placeholder + spinner halus.
+/// - Error (404/hotlink/CORS/file hilang) -> placeholder yang sama.
+///
+/// Placeholder memakai warna kategori + ikon + inisial sehingga
+/// artikel tanpa gambar tetap terlihat clean dan konsisten.
+class NewsImage extends StatelessWidget {
+  final String? imageUrl;
+  final String categoryName;
+  final BoxFit fit;
+  final double iconSize;
+
+  const NewsImage({
+    super.key,
+    required this.imageUrl,
+    required this.categoryName,
+    this.fit = BoxFit.cover,
+    this.iconSize = 40,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl?.trim();
+    if (url == null || url.isEmpty) {
+      return _NewsImagePlaceholder(
+        categoryName: categoryName,
+        iconSize: iconSize,
+      );
+    }
+    return Image.network(
+      url,
+      fit: fit,
+      gaplessPlayback: true,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            _NewsImagePlaceholder(
+              categoryName: categoryName,
+              iconSize: iconSize * 0.7,
+            ),
+            const Center(
+              child: SizedBox(
+                width: 26,
+                height: 26,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
+              ),
+            ),
+          ],
+        );
+      },
+      errorBuilder: (context, e, s) => _NewsImagePlaceholder(
+        categoryName: categoryName,
+        iconSize: iconSize,
+      ),
+    );
+  }
+}
+
+class _NewsImagePlaceholder extends StatelessWidget {
+  final String categoryName;
+  final double iconSize;
+
+  const _NewsImagePlaceholder({
+    required this.categoryName,
+    this.iconSize = 40,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final base = avatarColorFor(categoryName);
+    final initial = initialFor(categoryName);
+    final short = initial.isEmpty ? 'N' : initial[0];
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            base.withValues(alpha: 0.85),
+            base.withValues(alpha: 0.55),
+            const Color(0xFF1F2430).withValues(alpha: 0.9),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: iconSize + 20,
+              height: iconSize + 20,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                short,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: iconSize * 0.55,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                categoryName.isEmpty
+                    ? 'NARATA'
+                    : categoryName.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -234,7 +391,6 @@ class BreakingNewsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = post.imageUrl;
     final meta = relativeTime(post.createdAt);
 
     return SizedBox(
@@ -250,26 +406,12 @@ class BreakingNewsCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              if (imageUrl != null)
-                Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const Center(
-                      child: SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: CircularProgressIndicator(strokeWidth: 2.5),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, e, s) =>
-                      const _ImageFallback(iconSize: 48),
-                )
-              else
-                const _ImageFallback(iconSize: 48),
-              // gradient bawah
+              NewsImage(
+                imageUrl: post.imageUrl,
+                categoryName: post.categoryName,
+                iconSize: 44,
+              ),
+              // gradient bawah agar teks selalu terbaca
               const DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -381,7 +523,6 @@ class NewsListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = post.imageUrl;
     final date = formatPostDate(post.createdAt);
 
     return Material(
@@ -399,29 +540,11 @@ class NewsListTile extends StatelessWidget {
                 child: SizedBox(
                   width: thumbnailSize,
                   height: thumbnailSize,
-                  child: imageUrl != null
-                      ? Image.network(
-                          imageUrl,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return Container(
-                              color: const Color(0xFFF1F2F4),
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 22,
-                                  height: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, e, s) =>
-                              const _ImageFallback(iconSize: 30),
-                        )
-                      : const _ImageFallback(iconSize: 30),
+                  child: NewsImage(
+                    imageUrl: post.imageUrl,
+                    categoryName: post.categoryName,
+                    iconSize: 28,
+                  ),
                 ),
               ),
               const SizedBox(width: 14),
@@ -437,7 +560,7 @@ class NewsListTile extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 11.5,
                         color: NewsColors.muted,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         letterSpacing: 0.4,
                       ),
                     ),
@@ -564,27 +687,7 @@ class AuthorAvatar extends StatelessWidget {
   }
 }
 
-class _ImageFallback extends StatelessWidget {
-  final double iconSize;
-
-  const _ImageFallback({this.iconSize = 32});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFE4E6EB),
-      child: Center(
-        child: Icon(
-          Icons.image_outlined,
-          size: iconSize,
-          color: const Color(0xFF9AA0A6),
-        ),
-      ),
-    );
-  }
-}
-
-/// Search bar ala Discover.
+/// Search bar ala Discover — rapi, 52px, sudut 16.
 class DiscoverSearchBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback? onFilterTap;
@@ -614,7 +717,7 @@ class DiscoverSearchBar extends StatelessWidget {
               controller: controller,
               textInputAction: TextInputAction.search,
               decoration: const InputDecoration(
-                hintText: 'Search',
+                hintText: 'Cari artikel…',
                 hintStyle: TextStyle(fontSize: 15, color: Color(0xFF9AA0A6)),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -625,8 +728,18 @@ class DiscoverSearchBar extends StatelessWidget {
               style: const TextStyle(fontSize: 15, color: NewsColors.ink),
             ),
           ),
+          if (controller.text.isNotEmpty)
+            IconButton(
+              onPressed: controller.clear,
+              icon: const Icon(
+                Icons.clear,
+                size: 18,
+                color: NewsColors.muted,
+              ),
+              tooltip: 'Hapus pencarian',
+            ),
           Material(
-            color: Colors.transparent,
+            color: NewsColors.primary.withValues(alpha: 0.1),
             shape: const CircleBorder(),
             child: InkWell(
               customBorder: const CircleBorder(),
@@ -636,7 +749,7 @@ class DiscoverSearchBar extends StatelessWidget {
                 child: Icon(
                   Icons.tune,
                   size: 20,
-                  color: NewsColors.ink,
+                  color: NewsColors.primary,
                 ),
               ),
             ),
@@ -647,7 +760,7 @@ class DiscoverSearchBar extends StatelessWidget {
   }
 }
 
-/// Deretan chip kategori ala Discover (All biru aktif).
+/// Deretan chip kategori (All biru aktif).
 class CategoryPills extends StatelessWidget {
   final List<({int? id, String label})> items;
   final int? selectedId;
@@ -702,12 +815,21 @@ class _Pill extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? NewsColors.primary : const Color(0xFFF1F2F4),
           borderRadius: BorderRadius.circular(22),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: NewsColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 13.5,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: selected ? Colors.white : const Color(0xFF6B7280),
           ),
         ),
@@ -741,6 +863,137 @@ class CarouselDots extends StatelessWidget {
           ),
         );
       }),
+    );
+  }
+}
+
+/// State kosong yang ramah dan konsisten di semua halaman.
+class NewsEmptyState extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final double verticalPadding;
+
+  const NewsEmptyState({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    this.icon = Icons.article_outlined,
+    this.verticalPadding = 40,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: verticalPadding),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF1F2F4),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 40, color: NewsColors.muted),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: NewsColors.ink,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  height: 1.5,
+                  color: NewsColors.subtitle,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Kartu error muat data yang rapi + tombol coba lagi.
+class NewsLoadError extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final VoidCallback onRetry;
+
+  const NewsLoadError({
+    super.key,
+    this.title = 'Gagal memuat artikel',
+    this.subtitle = 'Pastikan backend NARATA sedang berjalan.',
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F7F8),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF0F0F2)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.cloud_off_outlined,
+              size: 32,
+              color: Colors.red.shade400,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12.5, color: NewsColors.subtitle),
+          ),
+          const SizedBox(height: 14),
+          OutlinedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Coba lagi'),
+            style: OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

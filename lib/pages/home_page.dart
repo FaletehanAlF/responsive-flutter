@@ -150,16 +150,27 @@ class _HomePageState extends State<HomePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 6),
-                        // Sapaan (dipertahankan untuk kompatibilitas + aksesibilitas)
+                        // Sapaan + judul besar yang clean
                         const Text(
                           'Selamat datang di NARATA',
                           style: TextStyle(
                             fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                             color: NewsColors.subtitle,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Kabar Terkini',
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                            color: NewsColors.ink,
+                            letterSpacing: -0.6,
+                            height: 1.15,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
                         SectionHeader(
                           title: 'Breaking News',
                         ),
@@ -307,7 +318,14 @@ class _HomePageState extends State<HomePage> {
                                 hasFilter: _selectedCategoryId != null,
                               );
                             }
-                            if (device == AppDevice.mobile) {
+                            // Tinggi sel TETAP agar tidak overflow saat resize.
+                            // Mobile 1 kolom (list), tablet 2, desktop 3.
+                            final columns = device == AppDevice.desktop
+                                ? 3
+                                : device == AppDevice.tablet
+                                    ? 2
+                                    : 1;
+                            if (columns == 1) {
                               return ListView.separated(
                                 shrinkWrap: true,
                                 physics:
@@ -326,16 +344,14 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               );
                             }
-                            // Tinggi sel TETAP (bukan childAspectRatio) agar tidak
-                            // overflow saat lebar layar digeser/di-resize.
                             return GridView.builder(
                               shrinkWrap: true,
                               physics:
                                   const NeverScrollableScrollPhysics(),
                               itemCount: posts.length,
                               gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: columns,
                                 crossAxisSpacing: 20,
                                 mainAxisSpacing: 4,
                                 mainAxisExtent: 118,
@@ -474,33 +490,7 @@ class _PostLoadError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F8),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          const Text(
-            'Gagal memuat artikel',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Pastikan backend NARATA sedang berjalan.',
-            style: TextStyle(fontSize: 12, color: NewsColors.subtitle),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh, size: 18),
-            label: const Text('Coba lagi'),
-          ),
-        ],
-      ),
-    );
+    return NewsLoadError(onRetry: onRetry);
   }
 }
 
@@ -512,34 +502,12 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: compact ? 24 : 40),
-      child: Center(
-        child: Column(
-          children: [
-            const Icon(
-              Icons.article_outlined,
-              size: 44,
-              color: NewsColors.muted,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              hasFilter
-                  ? 'Tidak ada artikel pada kategori ini'
-                  : 'Belum ada artikel',
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Pilih kategori lain atau tambahkan artikel.',
-              style: TextStyle(fontSize: 12, color: NewsColors.subtitle),
-            ),
-          ],
-        ),
-      ),
+    return NewsEmptyState(
+      title: hasFilter
+          ? 'Tidak ada artikel pada kategori ini'
+          : 'Belum ada artikel',
+      subtitle: 'Pilih kategori lain atau tambahkan artikel.',
+      verticalPadding: compact ? 24 : 40,
     );
   }
 }

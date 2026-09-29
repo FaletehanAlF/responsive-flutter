@@ -23,13 +23,11 @@ class _AddPostPageState extends State<AddPostPage> {
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  final TextEditingController _imageUrlController = TextEditingController();
 
   late final ApiService apiService = widget.apiService ?? ApiService();
 
   XFile? _selectedImage;
   Future<Uint8List>? _previewFuture;
-  bool _showUrlField = false;
 
   List<Category> _categories = const [];
   int? _selectedCategoryId;
@@ -51,7 +49,6 @@ class _AddPostPageState extends State<AddPostPage> {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
-    _imageUrlController.dispose();
     super.dispose();
   }
 
@@ -105,8 +102,6 @@ class _AddPostPageState extends State<AddPostPage> {
       _selectedImage = image;
       // Bytes sudah di tangan, langsung pakai agar preview tampil seketika.
       _previewFuture = Future.value(bytes);
-      // File menang atas link: kosongkan link agar tidak konflik.
-      _imageUrlController.clear();
     });
   }
 
@@ -139,11 +134,9 @@ class _AddPostPageState extends State<AddPostPage> {
   void _resetForm() {
     _titleController.clear();
     _contentController.clear();
-    _imageUrlController.clear();
     setState(() {
       _selectedImage = null;
       _previewFuture = null;
-      _showUrlField = false;
       _selectedCategoryId = null;
       _titleError = null;
       _contentError = null;
@@ -151,28 +144,9 @@ class _AddPostPageState extends State<AddPostPage> {
     });
   }
 
-  /// Link gambar yang ditempel user. Hanya dipakai bila tidak ada file.
-  String? get _pastedImageUrl {
-    final url = _imageUrlController.text.trim();
-    return url.isEmpty ? null : url;
-  }
-
-  bool _validateImageUrl() {
-    final url = _pastedImageUrl;
-    if (_selectedImage == null &&
-        url != null &&
-        !url.startsWith('http://') &&
-        !url.startsWith('https://')) {
-      _showMessage('Link gambar harus diawali http:// atau https://');
-      return false;
-    }
-    return true;
-  }
-
   Future<void> _submit() async {
     if (_isSubmitting) return;
     if (!_validate()) return;
-    if (!_validateImageUrl()) return;
 
     setState(() => _isSubmitting = true);
 
@@ -182,7 +156,6 @@ class _AddPostPageState extends State<AddPostPage> {
         content: _contentController.text.trim(),
         categoryId: _selectedCategoryId!,
         image: _selectedImage,
-        imageUrl: _selectedImage == null ? _pastedImageUrl : null,
       );
 
       if (!mounted) return;
@@ -444,8 +417,6 @@ class _AddPostPageState extends State<AddPostPage> {
       children: [
         ImageDropZone(
           image: _selectedImage,
-          // Preview link yang ditempel (kalah prioritas dari file).
-          imageUrl: _selectedImage == null ? _pastedImageUrl : null,
           previewFuture: _previewFuture,
           onPick: _pickImage,
           onDroppedFile: _handleNewFile,
@@ -457,16 +428,30 @@ class _AddPostPageState extends State<AddPostPage> {
             });
           },
         ),
-        const SizedBox(height: 6),
-        ImageUrlField(
-          controller: _imageUrlController,
-          visible: _showUrlField,
-          onToggle: (value) => setState(() {
-            _showUrlField = value;
-            if (!value) _imageUrlController.clear();
-          }),
-          onChanged: () => setState(() {}),
-        ),
+        if (_selectedImage == null)
+          const Padding(
+            padding: EdgeInsets.only(top: 10),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 15,
+                  color: NewsColors.subtitle,
+                ),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Ambil gambar dari galeri / file perangkat. Tanpa link.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: NewsColors.subtitle,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }

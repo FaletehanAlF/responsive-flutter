@@ -6,29 +6,20 @@ import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 import '../utils/news_theme.dart';
 
-/// Area drag & drop + klik untuk memilih gambar sampul artikel.
+/// Area pilih gambar sampul — KHUSUS file dari perangkat (klik / drag & drop).
 ///
-/// Widget ini HANYA menangani UI dan validasi ekstensi file.
-/// - Klik area -> [onPick] (file picker yang sudah ada di page).
-/// - Drop file -> validasi ekstensi, lalu [onDroppedFile].
-/// - File tidak valid -> [onDropError] dengan pesan yang jelas.
-/// - Jika beberapa file di-drop sekaligus, hanya satu file gambar
-///   valid pertama yang dipakai (form hanya butuh satu gambar).
-/// - Folder yang di-drop ditolak dengan pesan yang jelas.
-///
-/// Logic upload/HTTP tetap di service/page. Validasi ukuran (2 MB)
-/// tetap di page/service agar tidak ada duplikasi aturan.
-///
-/// Catatan drag dari website (mis. Pinterest): browser tidak memberikan
-/// file nyata ke Flutter (hanya URL, karena CORS), sehingga plugin tidak
-/// mengirim event drop sama sekali. Untuk kasus itu widget menampilkan
-/// petunjuk agar user menyimpan dulu gambarnya ke komputer. Drag file
-/// lokal dari komputer selalu didukung.
+/// Sengaja TANPA fitur tempel link (Pinterest/Chrome dsb) karena link
+/// hotlink sering gagal diunduh server (403/CORS/bukan file langsung).
+/// Alur yang didukung dan stabil:
+/// - Klik area -> [onPick] (galeri / file picker).
+/// - Drag & drop file lokal dari komputer -> [onDroppedFile].
+/// - [imageUrl] hanya untuk gambar lama dari server (/uploads/...)
+///   pada halaman edit, BUKAN link tempelan user.
 class ImageDropZone extends StatefulWidget {
   /// Gambar baru yang sudah dipilih (via picker maupun drop).
   final XFile? image;
 
-  /// URL gambar lama (dipakai halaman edit saat belum ada gambar baru).
+  /// URL gambar lama dari server (dipakai halaman edit).
   final String? imageUrl;
 
   /// Future bytes untuk preview di platform non-web.
@@ -58,7 +49,6 @@ class ImageDropZone extends StatefulWidget {
   });
 
   /// Cek apakah nama file berekstensi gambar yang didukung backend.
-  /// Dibuat static agar mudah di-test dan dipakai ulang.
   static bool isSupportedImageName(String fileName) {
     final lower = fileName.toLowerCase();
     return kSupportedImageExtensions.any(lower.endsWith);
@@ -73,26 +63,21 @@ class _ImageDropZoneState extends State<ImageDropZone> {
 
   void _handleDragDone(DropDoneDetails details) {
     setState(() => _dragging = false);
-    // Semua kegagalan di sini WAJIB memberi pesan ke user (jangan silent).
     try {
       if (details.files.isEmpty) {
         widget.onDropError(
-          'Tidak ada file gambar yang diterima. Seret file gambar dari komputer Anda.',
+          'Tidak ada file yang diterima. Seret file gambar dari perangkatmu.',
         );
         return;
       }
 
       for (final file in details.files) {
-        // Folder dilewati dulu; pesan khusus ada di bawah.
         if (file is DropItemDirectory) continue;
         final name = file.name;
         if (name.isNotEmpty && ImageDropZone.isSupportedImageName(name)) {
-          // Teruskan objek file ASLI (jangan dibuat ulang dari path) agar
-          // isi file (terutama blob URL di web) tidak hilang.
           widget.onDroppedFile(file);
           return;
         }
-        // Fallback: sebagian browser mengisi path tanpa name.
         if (name.isEmpty && ImageDropZone.isSupportedImageName(file.path)) {
           final fallbackName = file.path.split(RegExp(r'[\\/]')).last;
           widget.onDroppedFile(XFile(file.path, name: fallbackName));
@@ -102,17 +87,17 @@ class _ImageDropZoneState extends State<ImageDropZone> {
 
       if (details.files.every((file) => file is DropItemDirectory)) {
         widget.onDropError(
-          'Yang Anda seret adalah folder. Seret file gambarnya langsung.',
+          'Yang diseret adalah folder. Seret file gambarnya langsung.',
         );
         return;
       }
 
       widget.onDropError(
-        'Format gambar tidak didukung. Hanya jpg, jpeg, png, webp yang diizinkan',
+        'Format tidak didukung. Gunakan JPG, PNG, atau WEBP.',
       );
     } catch (_) {
       widget.onDropError(
-        'Gagal memproses file yang di-drop. Coba pilih lewat tombol.',
+        'Gagal memproses file. Coba pilih lewat tombol.',
       );
     }
   }
@@ -152,7 +137,7 @@ class _ImageDropZoneState extends State<ImageDropZone> {
           Text(
             _dragging
                 ? 'Lepaskan gambar di sini untuk mengganti'
-                : 'Seret gambar baru ke sini untuk mengganti',
+                : 'Seret gambar lain ke sini untuk mengganti',
             style: const TextStyle(
               fontSize: 12,
               color: NewsColors.subtitle,
@@ -166,7 +151,7 @@ class _ImageDropZoneState extends State<ImageDropZone> {
     }
 
     final imageUrl = widget.imageUrl;
-    if (imageUrl != null) {
+    if (imageUrl != null && imageUrl.isNotEmpty) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -220,7 +205,7 @@ class _ImageDropZoneState extends State<ImageDropZone> {
                 child: Icon(
                   _dragging
                       ? Icons.file_download_outlined
-                      : Icons.cloud_upload_outlined,
+                      : Icons.add_photo_alternate_outlined,
                   size: 30,
                   color: NewsColors.primary,
                 ),
@@ -229,7 +214,7 @@ class _ImageDropZoneState extends State<ImageDropZone> {
               Text(
                 _dragging
                     ? 'Lepaskan gambar di sini'
-                    : 'Seret & letakkan gambar di sini',
+                    : 'Pilih gambar sampul',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 15,
@@ -239,29 +224,31 @@ class _ImageDropZoneState extends State<ImageDropZone> {
               ),
               const SizedBox(height: 4),
               const Text(
-                'atau klik untuk memilih gambar',
+                'Ketuk untuk memilih dari galeri / file',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
                   color: NewsColors.subtitle,
                 ),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'JPG, PNG, atau WEBP • Maks 2 MB',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: NewsColors.subtitle,
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
                 ),
-              ),
-              const SizedBox(height: 2),
-              const Text(
-                'Hanya file dari komputer • Drag dari website tidak didukung',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: NewsColors.subtitle,
+                decoration: BoxDecoration(
+                  color: NewsColors.searchBg,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'JPG • PNG • WEBP — Maks 2 MB',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: NewsColors.subtitle,
+                  ),
                 ),
               ),
             ],
@@ -271,7 +258,6 @@ class _ImageDropZoneState extends State<ImageDropZone> {
     );
   }
 
-  /// Bingkai preview yang rapi: rounded + border tipis + rasio konsisten.
   Widget _previewCard(Widget child) {
     return Container(
       decoration: BoxDecoration(
@@ -288,7 +274,6 @@ class _ImageDropZoneState extends State<ImageDropZone> {
     );
   }
 
-  /// Nama file dalam satu baris rapi (ellipsis bila kepanjangan).
   Widget _fileNameChip(String name) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -320,8 +305,6 @@ class _ImageDropZoneState extends State<ImageDropZone> {
     );
   }
 
-  /// Tombol aksi yang aman di semua lebar layar: layar sempit (<380)
-  /// tombol disusun vertikal full-width agar tidak overflow.
   Widget _actionButtons() {
     final replaceButton = OutlinedButton.icon(
       onPressed: widget.onPick,
@@ -397,64 +380,6 @@ class _ImageDropZoneState extends State<ImageDropZone> {
           fit: BoxFit.cover,
         );
       },
-    );
-  }
-}
-
-/// Kolom opsional "tempel link gambar" (mis. dari Pinterest).
-/// Link hanya dipakai bila tidak ada file (file selalu menang).
-/// Server yang men-download gambarnya, jadi tidak kena blokir CORS browser.
-class ImageUrlField extends StatelessWidget {
-  final TextEditingController controller;
-  final bool visible;
-  final ValueChanged<bool> onToggle;
-  final VoidCallback onChanged;
-
-  const ImageUrlField({
-    super.key,
-    required this.controller,
-    required this.visible,
-    required this.onToggle,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Align(
-          alignment: Alignment.center,
-          child: TextButton.icon(
-            onPressed: () => onToggle(!visible),
-            icon: const Icon(Icons.link, size: 16),
-            label: Text(
-              visible ? 'Tutup kolom link' : 'atau tempel link gambar',
-            ),
-          ),
-        ),
-        if (visible)
-          TextField(
-            controller: controller,
-            keyboardType: TextInputType.url,
-            onChanged: (_) => onChanged(),
-            decoration: InputDecoration(
-              hintText: 'https://contoh.com/gambar.jpg',
-              prefixIcon: const Icon(Icons.link),
-              suffixIcon: controller.text.isEmpty
-                  ? null
-                  : IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        controller.clear();
-                        onChanged();
-                      },
-                    ),
-              border: const OutlineInputBorder(),
-            ),
-          ),
-      ],
     );
   }
 }

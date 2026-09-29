@@ -1,3 +1,4 @@
+import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:responsive_ui/main.dart';
@@ -169,7 +170,7 @@ void main() {
       await pumpAtSize(tester, const Size(400, 800));
 
       expect(tester.takeException(), isNull);
-      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(AnimatedBottomNavigationBar), findsOneWidget);
       expect(find.text('Beranda'), findsWidgets);
       expect(find.text('Selamat datang di NARATA'), findsOneWidget);
     });

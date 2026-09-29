@@ -258,11 +258,24 @@ class _ArticlesPageState extends State<ArticlesPage> {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  '${filtered.length} artikel ditemukan',
-                                  style: const TextStyle(
-                                    fontSize: 12.5,
-                                    color: NewsColors.subtitle,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: NewsColors.primary.withValues(
+                                      alpha: 0.08,
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '${filtered.length} artikel ditemukan',
+                                    style: const TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: NewsColors.primary,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 6),
@@ -294,12 +307,12 @@ class _ArticlesPageState extends State<ArticlesPage> {
                                         const NeverScrollableScrollPhysics(),
                                     itemCount: filtered.length,
                                     gridDelegate:
-                                        const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount:
+                                          device == AppDevice.desktop ? 3 : 2,
                                       crossAxisSpacing: 20,
                                       mainAxisSpacing: 4,
-                                      // Tinggi tetap (thumbnail 96 + padding 16
-                                      // + toleransi) — anti overflow saat resize.
+                                      // Tinggi tetap — anti overflow saat resize.
                                       mainAxisExtent: 122,
                                     ),
                                     itemBuilder: (context, i) {
