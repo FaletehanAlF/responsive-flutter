@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
 import '../utils/news_theme.dart';
 import '../widgets/news_widgets.dart';
 import 'category_page.dart';
@@ -57,6 +58,41 @@ class SettingsPage extends StatelessWidget {
       context,
       MaterialPageRoute(builder: (context) => const ProfilePage()),
     );
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          title: const Text('Keluar akun?'),
+          content: const Text(
+            'Kamu harus masuk kembali untuk mengelola artikel.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Keluar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      AuthService.instance.logout();
+    }
   }
 
   @override
@@ -169,6 +205,14 @@ class SettingsPage extends StatelessWidget {
                           title: 'Tentang NARATA',
                           subtitle: 'Informasi aplikasi.',
                           onTap: () => _showAbout(context),
+                        ),
+                        const _MenuDivider(),
+                        _MenuTile(
+                          icon: Icons.logout_outlined,
+                          tint: Color(0xFFE53935),
+                          title: 'Keluar',
+                          subtitle: 'Keluar dari akunmu.',
+                          onTap: () => _confirmLogout(context),
                         ),
                       ],
                     ),

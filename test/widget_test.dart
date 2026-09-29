@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:responsive_ui/main.dart';
 import 'package:responsive_ui/models/category.dart';
 import 'package:responsive_ui/models/post.dart';
+import 'package:responsive_ui/services/auth_service.dart';
 import 'package:responsive_ui/utils/formatters.dart';
 import 'package:responsive_ui/widgets/category_badge.dart';
 
@@ -157,6 +158,8 @@ void main() {
 
   group('MyApp', () {
     Future<void> pumpAtSize(WidgetTester tester, Size size) async {
+      // Mulai selalu dari kondisi keluar agar splash tampil.
+      AuthService.instance.logout();
       tester.view.physicalSize = size;
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -164,10 +167,48 @@ void main() {
       await tester.pump();
     }
 
+    /// Aplikasi kini dibuka dengan splash screen — masuk dulu
+    /// memakai akun demo agar sampai ke MainShell.
+    Future<void> loginViaUi(WidgetTester tester) async {
+      expect(find.text('Welcome Back!'), findsOneWidget);
+
+      await tester.tap(find.text('Sign in'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('Welcome back'), findsOneWidget);
+
+      await tester.enterText(
+        find.byType(TextFormField).at(0),
+        'demo@ruangkata.id',
+      );
+      await tester.enterText(
+        find.byType(TextFormField).at(1),
+        'demo1234',
+      );
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Sign in'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    testWidgets('membuka splash screen saat pertama dibuka', (
+      tester,
+    ) async {
+      await pumpAtSize(tester, const Size(400, 800));
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Welcome Back!'), findsOneWidget);
+      expect(find.text('RUANG KATA'), findsOneWidget);
+      expect(find.text('Sign in'), findsOneWidget);
+      expect(find.text('Sign up'), findsOneWidget);
+    });
+
     testWidgets('layout ponsel tanpa error saat backend tidak terjangkau', (
       tester,
     ) async {
       await pumpAtSize(tester, const Size(400, 800));
+      await loginViaUi(tester);
 
       expect(tester.takeException(), isNull);
       expect(find.byType(AnimatedBottomNavigationBar), findsOneWidget);
@@ -177,6 +218,7 @@ void main() {
 
     testWidgets('layout desktop tanpa error', (tester) async {
       await pumpAtSize(tester, const Size(1400, 900));
+      await loginViaUi(tester);
 
       expect(tester.takeException(), isNull);
       expect(find.byType(NavigationRail), findsOneWidget);
@@ -185,6 +227,7 @@ void main() {
 
     testWidgets('navigasi ke tab Artikel', (tester) async {
       await pumpAtSize(tester, const Size(400, 800));
+      await loginViaUi(tester);
 
       await tester.tap(find.text('Artikel'));
       await tester.pump();
@@ -196,6 +239,7 @@ void main() {
 
     testWidgets('navigasi ke tab Tambah dan Pengaturan', (tester) async {
       await pumpAtSize(tester, const Size(400, 800));
+      await loginViaUi(tester);
 
       await tester.tap(find.text('Tambah'));
       await tester.pump();
@@ -210,6 +254,7 @@ void main() {
 
     testWidgets('menampilkan panel detail tanpa error', (tester) async {
       await pumpAtSize(tester, const Size(400, 800));
+      await loginViaUi(tester);
 
       await tester.tap(find.text('Artikel'));
       await tester.pump();
