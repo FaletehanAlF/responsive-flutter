@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/auth_widgets.dart';
 
-/// Layar masuk (login) sesuai referensi kanan: header seni + tombol Back,
-/// kartu "Welcome back", field Email & Password, Remember me,
-/// tombol Sign in, login sosial, dan tautan ke Register.
+/// Layar masuk: kartu form ringkas dengan judul rata kiri,
+/// field filled, dan aksi sosial.
 class LoginPage extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onGoRegister;
@@ -93,26 +92,24 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return AuthShell(
-      child: Container(
-        color: Colors.white,
+      child: Center(
         child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Stack(
-                children: [
-                  const AuthBlobArt(height: 240),
-                  Positioned(
-                    top: 12,
-                    left: 6,
-                    child: AuthBackButton(onTap: widget.onBack),
-                  ),
-                ],
-              ),
-              // Kartu menindih header.
-              Transform.translate(
-                offset: const Offset(0, -28),
-                child: AuthFormCard(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    AuthBackButton(onTap: widget.onBack),
+                    const Spacer(),
+                    const AuthLogoMark(size: 40),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                AuthFormCard(
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -121,10 +118,14 @@ class _LoginPageState extends State<LoginPage> {
                       children: [
                         const Text(
                           'Welcome back',
-                          textAlign: TextAlign.center,
                           style: AuthTheme.titleStyle,
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Masuk untuk melanjutkan ke akunmu.',
+                          style: AuthTheme.subtitleStyle,
+                        ),
+                        const SizedBox(height: 22),
                         AuthTextField(
                           label: 'Email',
                           hint: 'kristin.watson@example.com',
@@ -132,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
                           keyboardType: TextInputType.emailAddress,
                           validator: AuthValidators.validateEmail,
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 16),
                         AuthPasswordField(
                           controller: _passwordController,
                           hint: '••••••••••',
@@ -142,7 +143,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           onSubmitted: _submit,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 14),
                         Row(
                           children: [
                             Expanded(
@@ -155,8 +156,8 @@ class _LoginPageState extends State<LoginPage> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    fontSize: 12.5,
-                                    color: Color(0xFF6B7280),
+                                    fontSize: 13,
+                                    color: AuthTheme.subtitle,
                                   ),
                                 ),
                               ),
@@ -173,38 +174,38 @@ class _LoginPageState extends State<LoginPage> {
                                 child: Text(
                                   'Forgot password?',
                                   style: TextStyle(
-                                    fontSize: 12.5,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w700,
-                                    color: AuthTheme.royal,
+                                    color: AuthTheme.primary,
                                   ),
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
                         AuthPrimaryButton(
                           label: 'Sign in',
                           loading: _loading,
                           onPressed: _submit,
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 20),
                         const AuthDividerLabel(text: 'Sign in with'),
-                        const SizedBox(height: 14),
-                        const AuthSocialRow(),
                         const SizedBox(height: 16),
-                        AuthSwitchText(
-                          prefix: "Don't have an account?",
-                          action: 'Sign up',
-                          onTap: widget.onGoRegister,
-                        ),
-                        const SizedBox(height: 8),
+                        const AuthSocialRow(),
                       ],
                     ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                AuthSwitchText(
+                  prefix: "Don't have an account?",
+                  action: 'Sign up',
+                  onTap: widget.onGoRegister,
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
       ),

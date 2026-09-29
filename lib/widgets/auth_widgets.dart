@@ -1,41 +1,108 @@
 import 'package:flutter/material.dart';
 
-/// Token desain khusus alur auth (splash / login / register),
-/// meniru referensi: seni blob biru, kartu putih, tombol royal-blue.
+/// Bahasa desain auth versi clean-modern: kanvas terang netral, kartu
+/// putih dengan border halus, aksen biru aplikasi, tipografi tegas rata
+/// kiri, dan whitespace lega. Tanpa ilustrasi berat — fokus ke isi.
 class AuthTheme {
   static const String brandName = 'Ruang Kata';
 
-  /// Biru royal ala tombol & judul pada referensi.
-  static const Color royal = Color(0xFF3357D6);
-  static const Color royalDark = Color(0xFF1E2A78);
-  static const Color navy = Color(0xFF141F5C);
-  static const Color skyLight = Color(0xFFA9C3F5);
-  static const Color skyMid = Color(0xFF6E93E8);
+  static const Color primary = Color(0xFF1877F2);
+  static const Color primaryDark = Color(0xFF0F5FCC);
+  static const Color ink = Color(0xFF111214);
+  static const Color subtitle = Color(0xFF6B7280);
+  static const Color muted = Color(0xFF9AA0A6);
+  static const Color fieldFill = Color(0xFFF1F2F4);
+  static const Color line = Color(0xFFE8EAEF);
 
-  /// Abu kebiruan di belakang bingkai ponsel pada referensi.
-  static const Color canvas = Color(0xFFD9E1F2);
+  /// Kanvas terang di belakang bingkai pada tablet/desktop.
+  static const Color canvas = Color(0xFFEDF0F6);
 
   static const double phoneMaxWidth = 430;
-  static const double cardRadius = 28;
-  static const double fieldRadius = 14;
 
   static const TextStyle titleStyle = TextStyle(
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: FontWeight.w800,
-    color: royal,
-    letterSpacing: -0.3,
+    color: ink,
+    letterSpacing: -0.5,
+    height: 1.2,
+  );
+
+  static const TextStyle subtitleStyle = TextStyle(
+    fontSize: 14,
+    height: 1.55,
+    color: subtitle,
   );
 
   static const TextStyle fieldLabelStyle = TextStyle(
-    fontSize: 11.5,
-    fontWeight: FontWeight.w600,
-    color: Color(0xFF8A8FA3),
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+    color: ink,
   );
 }
 
-/// Bingkai responsif: di ponsel tampil full-bleed, di tablet/desktop
-/// tampil sebagai "bingkai ponsel" (rounded + bayangan) di tengah
-/// kanvas abu kebiruan seperti pada referensi.
+/// Logo mark "RK": kotak gradasi biru dengan inisial putih.
+class AuthLogoMark extends StatelessWidget {
+  final double size;
+
+  const AuthLogoMark({super.key, this.size = 64});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AuthTheme.primary, AuthTheme.primaryDark],
+        ),
+        borderRadius: BorderRadius.circular(size * 0.3),
+        boxShadow: [
+          BoxShadow(
+            color: AuthTheme.primary.withValues(alpha: 0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        'RK',
+        style: TextStyle(
+          fontSize: size * 0.36,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+/// Nama brand kecil berhuruf renggang di bawah/beside logo.
+class AuthBrandLabel extends StatelessWidget {
+  final TextAlign textAlign;
+
+  const AuthBrandLabel({super.key, this.textAlign = TextAlign.center});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'RUANG KATA',
+      textAlign: textAlign,
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 3.0,
+        color: AuthTheme.primary,
+      ),
+    );
+  }
+}
+
+/// Bingkai responsif: ponsel full-bleed, tablet/desktop berupa kartu
+/// terpusat yang "mengambang" di atas kanvas terang.
 class AuthShell extends StatelessWidget {
   final Widget child;
 
@@ -44,36 +111,37 @@ class AuthShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AuthTheme.canvas,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final isPhone = constraints.maxWidth < 600;
-            if (isPhone) {
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(0),
-                child: child,
-              );
+            if (constraints.maxWidth < 600) {
+              return child;
             }
             final frameHeight =
                 (constraints.maxHeight - 48).clamp(560.0, 900.0);
-            return Center(
-              child: Container(
-                width: AuthTheme.phoneMaxWidth,
-                height: frameHeight,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x33000000),
-                      blurRadius: 32,
-                      offset: Offset(0, 16),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(32),
-                  child: child,
+            return Container(
+              color: AuthTheme.canvas,
+              child: Center(
+                child: Container(
+                  width: AuthTheme.phoneMaxWidth,
+                  height: frameHeight,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: AuthTheme.line),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x14000000),
+                        blurRadius: 32,
+                        offset: Offset(0, 16),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(27),
+                    child: child,
+                  ),
                 ),
               ),
             );
@@ -84,133 +152,7 @@ class AuthShell extends StatelessWidget {
   }
 }
 
-/// Latar seni abstrak biru (blob + bola kaca) yang meniru referensi,
-/// digambar murni dengan Canvas agar tanpa aset gambar.
-class AuthBlobArt extends StatelessWidget {
-  final double height;
-
-  const AuthBlobArt({super.key, this.height = 250});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: const CustomPaint(painter: AuthBlobPainter()),
-    );
-  }
-}
-
-/// Painter seni abstrak biru — dipakai header auth maupun latar splash.
-class AuthBlobPainter extends CustomPainter {
-  const AuthBlobPainter();
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    // Dasar gradasi navy -> royal.
-    final base = Rect.fromLTWH(0, 0, w, h);
-    canvas.drawRect(
-      base,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF2A3FA0), Color(0xFF5B7FE8)],
-        ).createShader(base),
-    );
-
-    // Gelombang muda transparan.
-    final wave = Path()
-      ..moveTo(0, h * 0.28)
-      ..quadraticBezierTo(w * 0.3, h * 0.05, w * 0.62, h * 0.3)
-      ..quadraticBezierTo(w * 0.85, h * 0.5, w, h * 0.38)
-      ..lineTo(w, 0)
-      ..lineTo(0, 0)
-      ..close();
-    canvas.drawPath(
-      wave,
-      Paint()..color = Colors.white.withValues(alpha: 0.22),
-    );
-
-    final wave2 = Path()
-      ..moveTo(0, h * 0.62)
-      ..quadraticBezierTo(w * 0.35, h * 0.35, w * 0.7, h * 0.62)
-      ..quadraticBezierTo(w * 0.88, h * 0.76, w, h * 0.68)
-      ..lineTo(w, h)
-      ..lineTo(0, h)
-      ..close();
-    canvas.drawPath(
-      wave2,
-      Paint()..color = const Color(0xFF141F5C).withValues(alpha: 0.35),
-    );
-
-    // Lingkaran navy pojok kiri atas (tempat tombol Back).
-    canvas.drawCircle(
-      Offset(w * 0.02, h * 0.02),
-      w * 0.24,
-      Paint()..color = const Color(0xFF131C55),
-    );
-
-    // Bola biru muda kanan atas.
-    _glossyBall(
-      canvas,
-      center: Offset(w * 0.78, h * 0.30),
-      radius: w * 0.17,
-      inner: const Color(0xFFB9D0FA),
-      outer: const Color(0xFF5B7FE8),
-    );
-
-    // Bola putih kecil.
-    _glossyBall(
-      canvas,
-      center: Offset(w * 0.72, h * 0.62),
-      radius: w * 0.10,
-      inner: Colors.white,
-      outer: const Color(0xFF9DB9F2),
-    );
-
-    // Bola navy bawah kiri.
-    _glossyBall(
-      canvas,
-      center: Offset(w * 0.30, h * 0.94),
-      radius: w * 0.16,
-      inner: const Color(0xFF2A3FA0),
-      outer: const Color(0xFF0E1647),
-    );
-  }
-
-  void _glossyBall(
-    Canvas canvas, {
-    required Offset center,
-    required double radius,
-    required Color inner,
-    required Color outer,
-  }) {
-    canvas.drawCircle(
-      center,
-      radius,
-      Paint()
-        ..shader = RadialGradient(
-          center: const Alignment(-0.35, -0.4),
-          radius: 1.1,
-          colors: [inner, outer],
-        ).createShader(Rect.fromCircle(center: center, radius: radius)),
-    );
-    // Kilau kaca.
-    canvas.drawCircle(
-      center + Offset(-radius * 0.3, -radius * 0.35),
-      radius * 0.28,
-      Paint()..color = Colors.white.withValues(alpha: 0.55),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// Kartu putih yang menindih seni header (radius atas 28).
+/// Kartu form putih: padding lega, radius 24, border + bayangan halus.
 class AuthFormCard extends StatelessWidget {
   final Widget child;
 
@@ -220,19 +162,59 @@ class AuthFormCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
-      decoration: const BoxDecoration(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AuthTheme.cardRadius),
-        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AuthTheme.line),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            blurRadius: 24,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       child: child,
     );
   }
 }
 
-/// Field teks auth: label kecil di atas + kotak border abu terang.
+InputDecoration _authInputDecoration(String hint) {
+  const radius = BorderRadius.all(Radius.circular(16));
+  return InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(fontSize: 14, color: AuthTheme.muted),
+    filled: true,
+    fillColor: AuthTheme.fieldFill,
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: 16,
+      vertical: 15,
+    ),
+    border: const OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide.none,
+    ),
+    enabledBorder: const OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide.none,
+    ),
+    focusedBorder: const OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide(color: AuthTheme.primary, width: 1.5),
+    ),
+    errorBorder: const OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide(color: Colors.red, width: 1),
+    ),
+    focusedErrorBorder: const OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide(color: Colors.red, width: 1.5),
+    ),
+  );
+}
+
+/// Field teks auth: label tegas + input filled seperti form aplikasi.
 class AuthTextField extends StatelessWidget {
   final String label;
   final String hint;
@@ -262,7 +244,7 @@ class AuthTextField extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(label, style: AuthTheme.fieldLabelStyle),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
@@ -271,48 +253,8 @@ class AuthTextField extends StatelessWidget {
           onChanged: onChanged,
           enabled: enabled,
           autovalidateMode: AutovalidateMode.onUserInteraction,
-          style: const TextStyle(fontSize: 14.5, color: Color(0xFF1B1D29)),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(
-              fontSize: 13.5,
-              color: Color(0xFFB6BACC),
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-            border: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(AuthTheme.fieldRadius),
-              borderSide: const BorderSide(color: Color(0xFFE3E6F0)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(AuthTheme.fieldRadius),
-              borderSide: const BorderSide(color: Color(0xFFE3E6F0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(AuthTheme.fieldRadius),
-              borderSide: const BorderSide(
-                color: AuthTheme.royal,
-                width: 1.5,
-              ),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(AuthTheme.fieldRadius),
-              borderSide: const BorderSide(color: Colors.red),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(AuthTheme.fieldRadius),
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
-            ),
-          ),
+          style: const TextStyle(fontSize: 15, color: AuthTheme.ink),
+          decoration: _authInputDecoration(hint),
         ),
       ],
     );
@@ -354,7 +296,7 @@ class _AuthPasswordFieldState extends State<AuthPasswordField> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(widget.label, style: AuthTheme.fieldLabelStyle),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         TextFormField(
           controller: widget.controller,
           obscureText: _obscure,
@@ -363,19 +305,8 @@ class _AuthPasswordFieldState extends State<AuthPasswordField> {
           onChanged: widget.onChanged,
           onFieldSubmitted: (_) => widget.onSubmitted?.call(),
           autovalidateMode: AutovalidateMode.onUserInteraction,
-          style: const TextStyle(fontSize: 14.5, color: Color(0xFF1B1D29)),
-          decoration: InputDecoration(
-            hintText: widget.hint,
-            hintStyle: const TextStyle(
-              fontSize: 13.5,
-              color: Color(0xFFB6BACC),
-            ),
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+          style: const TextStyle(fontSize: 15, color: AuthTheme.ink),
+          decoration: _authInputDecoration(widget.hint).copyWith(
             suffixIcon: IconButton(
               tooltip: _obscure ? 'Tampilkan password' : 'Sembunyikan password',
               onPressed: () => setState(() => _obscure = !_obscure),
@@ -384,36 +315,8 @@ class _AuthPasswordFieldState extends State<AuthPasswordField> {
                     ? Icons.visibility_outlined
                     : Icons.visibility_off_outlined,
                 size: 20,
-                color: const Color(0xFF8A8FA3),
+                color: AuthTheme.muted,
               ),
-            ),
-            border: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(AuthTheme.fieldRadius),
-              borderSide: const BorderSide(color: Color(0xFFE3E6F0)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(AuthTheme.fieldRadius),
-              borderSide: const BorderSide(color: Color(0xFFE3E6F0)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(AuthTheme.fieldRadius),
-              borderSide: const BorderSide(
-                color: AuthTheme.royal,
-                width: 1.5,
-              ),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(AuthTheme.fieldRadius),
-              borderSide: const BorderSide(color: Colors.red),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(AuthTheme.fieldRadius),
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
             ),
           ),
         ),
@@ -422,7 +325,7 @@ class _AuthPasswordFieldState extends State<AuthPasswordField> {
   }
 }
 
-/// Tombol utama biru royal.
+/// Tombol utama penuh.
 class AuthPrimaryButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -443,16 +346,16 @@ class AuthPrimaryButton extends StatelessWidget {
       child: FilledButton(
         onPressed: loading ? null : onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: AuthTheme.royal,
+          backgroundColor: AuthTheme.primary,
           foregroundColor: Colors.white,
           disabledBackgroundColor:
-              AuthTheme.royal.withValues(alpha: 0.6),
+              AuthTheme.primary.withValues(alpha: 0.6),
           textStyle: const TextStyle(
-            fontSize: 15.5,
+            fontSize: 16,
             fontWeight: FontWeight.w700,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AuthTheme.fieldRadius),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
         child: loading
@@ -470,7 +373,42 @@ class AuthPrimaryButton extends StatelessWidget {
   }
 }
 
-/// Tombol lingkaran "Back" di atas lingkaran navy header.
+/// Tombol sekunder (outlined) penuh.
+class AuthSecondaryButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+
+  const AuthSecondaryButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AuthTheme.primary,
+          side: const BorderSide(color: AuthTheme.primary, width: 1.5),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        child: Text(label),
+      ),
+    );
+  }
+}
+
+/// Tombol kembali: pil abu dengan ikon + teks.
 class AuthBackButton extends StatelessWidget {
   final VoidCallback onTap;
 
@@ -479,23 +417,28 @@ class AuthBackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent,
+      color: AuthTheme.fieldFill,
+      shape: const StadiumBorder(),
       child: InkWell(
+        customBorder: const StadiumBorder(),
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
         child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.chevron_left, size: 22, color: Colors.white),
-              SizedBox(width: 2),
+              Icon(
+                Icons.arrow_back,
+                size: 18,
+                color: AuthTheme.ink,
+              ),
+              SizedBox(width: 4),
               Text(
                 'Back',
                 style: TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AuthTheme.ink,
                 ),
               ),
             ],
@@ -516,18 +459,15 @@ class AuthDividerLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Expanded(child: Divider(color: Color(0xFFECEFF6))),
+        const Expanded(child: Divider(color: AuthTheme.line)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             text,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFF9AA0B5),
-            ),
+            style: const TextStyle(fontSize: 12, color: AuthTheme.muted),
           ),
         ),
-        const Expanded(child: Divider(color: Color(0xFFECEFF6))),
+        const Expanded(child: Divider(color: AuthTheme.line)),
       ],
     );
   }
@@ -553,54 +493,62 @@ class AuthSocialRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _SocialCircle(
+        _SocialButton(
           tooltip: 'Facebook',
           onTap: () => _soon(context),
-          child: const Icon(Icons.facebook, size: 26, color: Color(0xFF1877F2)),
+          child: const Icon(
+            Icons.facebook,
+            size: 24,
+            color: AuthTheme.primary,
+          ),
         ),
-        const SizedBox(width: 22),
-        _SocialCircle(
+        const SizedBox(width: 12),
+        _SocialButton(
           tooltip: 'X',
           onTap: () => _soon(context),
           child: const Text(
             '𝕏',
             style: TextStyle(
-              fontSize: 21,
+              fontSize: 19,
               fontWeight: FontWeight.w800,
-              color: Colors.black87,
+              color: AuthTheme.ink,
             ),
           ),
         ),
-        const SizedBox(width: 22),
-        _SocialCircle(
+        const SizedBox(width: 12),
+        _SocialButton(
           tooltip: 'Google',
           onTap: () => _soon(context),
           child: const Text(
             'G',
             style: TextStyle(
-              fontSize: 23,
+              fontSize: 21,
               fontWeight: FontWeight.w800,
               color: Color(0xFFDB4437),
             ),
           ),
         ),
-        const SizedBox(width: 22),
-        _SocialCircle(
+        const SizedBox(width: 12),
+        _SocialButton(
           tooltip: 'Apple',
           onTap: () => _soon(context),
-          child: const Icon(Icons.apple, size: 27, color: Colors.black87),
+          child: const Icon(
+            Icons.apple,
+            size: 25,
+            color: AuthTheme.ink,
+          ),
         ),
       ],
     );
   }
 }
 
-class _SocialCircle extends StatelessWidget {
+class _SocialButton extends StatelessWidget {
   final String tooltip;
   final VoidCallback onTap;
   final Widget child;
 
-  const _SocialCircle({
+  const _SocialButton({
     required this.tooltip,
     required this.onTap,
     required this.child,
@@ -611,14 +559,17 @@ class _SocialCircle extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: const Color(0xFFF4F6FB),
-        shape: const CircleBorder(),
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: AuthTheme.line),
+        ),
         child: InkWell(
-          customBorder: const CircleBorder(),
+          borderRadius: BorderRadius.circular(14),
           onTap: onTap,
           child: SizedBox(
-            width: 46,
-            height: 46,
+            width: 56,
+            height: 48,
             child: Center(child: child),
           ),
         ),
@@ -650,10 +601,7 @@ class AuthSwitchText extends StatelessWidget {
             prefix,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 12.5,
-              color: Color(0xFF9AA0B5),
-            ),
+            style: const TextStyle(fontSize: 13, color: AuthTheme.subtitle),
           ),
         ),
         GestureDetector(
@@ -663,9 +611,9 @@ class AuthSwitchText extends StatelessWidget {
             child: Text(
               action,
               style: const TextStyle(
-                fontSize: 12.5,
+                fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: AuthTheme.royal,
+                color: AuthTheme.primary,
               ),
             ),
           ),
@@ -699,11 +647,11 @@ class AuthCheckRow extends StatelessWidget {
           child: Checkbox(
             value: value,
             onChanged: onChanged,
-            activeColor: AuthTheme.royal,
+            activeColor: AuthTheme.primary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(5),
             ),
-            side: const BorderSide(color: Color(0xFFB6BACC), width: 1.5),
+            side: const BorderSide(color: AuthTheme.muted, width: 1.5),
           ),
         ),
         const SizedBox(width: 8),

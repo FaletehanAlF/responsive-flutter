@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/auth_widgets.dart';
 
-/// Layar daftar (register) sesuai referensi tengah: header seni + Back,
-/// kartu "Get Started", field Full Name / Email / Password, persetujuan
-/// data pribadi, tombol Sign up, daftar sosial, dan tautan ke Login.
+/// Layar daftar: kartu form dengan validasi zod + persetujuan data.
 class RegisterPage extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onGoLogin;
@@ -88,25 +86,24 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return AuthShell(
-      child: Container(
-        color: Colors.white,
+      child: Center(
         child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Stack(
-                children: [
-                  const AuthBlobArt(height: 210),
-                  Positioned(
-                    top: 12,
-                    left: 6,
-                    child: AuthBackButton(onTap: widget.onBack),
-                  ),
-                ],
-              ),
-              Transform.translate(
-                offset: const Offset(0, -28),
-                child: AuthFormCard(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    AuthBackButton(onTap: widget.onBack),
+                    const Spacer(),
+                    const AuthLogoMark(size: 40),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                AuthFormCard(
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -115,10 +112,14 @@ class _RegisterPageState extends State<RegisterPage> {
                       children: [
                         const Text(
                           'Get Started',
-                          textAlign: TextAlign.center,
                           style: AuthTheme.titleStyle,
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Buat akun untuk mulai menulis dan membaca.',
+                          style: AuthTheme.subtitleStyle,
+                        ),
+                        const SizedBox(height: 22),
                         AuthTextField(
                           label: 'Full Name',
                           hint: 'Enter Full Name',
@@ -127,7 +128,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           textInputAction: TextInputAction.next,
                           validator: AuthValidators.validateName,
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 16),
                         AuthTextField(
                           label: 'Email',
                           hint: 'Enter Email',
@@ -135,14 +136,14 @@ class _RegisterPageState extends State<RegisterPage> {
                           keyboardType: TextInputType.emailAddress,
                           validator: AuthValidators.validateEmail,
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 16),
                         AuthPasswordField(
                           controller: _passwordController,
                           hint: 'Enter Password',
                           validator: AuthValidators.validatePassword,
                           onSubmitted: _submit,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 14),
                         AuthCheckRow(
                           value: _agreed,
                           onChanged: (v) => setState(() {
@@ -152,8 +153,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           label: RichText(
                             text: const TextSpan(
                               style: TextStyle(
-                                fontSize: 12.5,
-                                color: Color(0xFF6B7280),
+                                fontSize: 13,
+                                color: AuthTheme.subtitle,
                               ),
                               children: [
                                 TextSpan(
@@ -163,7 +164,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                   text: 'Personal data',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w700,
-                                    color: AuthTheme.royal,
+                                    color: AuthTheme.primary,
                                   ),
                                 ),
                               ],
@@ -181,29 +182,29 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                             ),
                           ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
                         AuthPrimaryButton(
                           label: 'Sign up',
                           loading: _loading,
                           onPressed: _submit,
                         ),
-                        const SizedBox(height: 18),
+                        const SizedBox(height: 20),
                         const AuthDividerLabel(text: 'Sign up with'),
-                        const SizedBox(height: 14),
-                        const AuthSocialRow(),
                         const SizedBox(height: 16),
-                        AuthSwitchText(
-                          prefix: 'Already have an account?',
-                          action: 'Sign in',
-                          onTap: widget.onGoLogin,
-                        ),
-                        const SizedBox(height: 8),
+                        const AuthSocialRow(),
                       ],
                     ),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 20),
+                AuthSwitchText(
+                  prefix: 'Already have an account?',
+                  action: 'Sign in',
+                  onTap: widget.onGoLogin,
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
       ),
